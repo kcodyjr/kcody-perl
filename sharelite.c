@@ -442,13 +442,6 @@ int sharelite_flags( Share *share ) {
 	return share->flags;
 }
 
-int sharelite_is_valid( Share *share ) {
-
-	CALL_NEEDS_SHARE(-1);
-
-	return semctl( share->semid, 0, GETPID ) > 0;
-}
-
 int sharelite_length( Share *share ) {
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
