@@ -15,11 +15,11 @@ Class::Attrib - Abstract translucent attribute management.
 
 =over
 
-=item * Defines a simple way to specify attribute default values per class.
-
-=item * Provides an inherited view of class attribute definitions.
+=item * Provides an inherited view of attributes.
 
 =item * AUTOLOAD's accessor methods for visible attributes only.
+
+=item * Supplies a simple way to specify attributes and default values.
 
 =back
 
@@ -29,12 +29,12 @@ use strict;
 use warnings;
 
 use Storable qw( &dclone );
-use Class::Multi qw( &walk );
+use Class::Multi qw( &walk &other &otherpkg );
 use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.00";
+$VERSION = "1.01";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -70,9 +70,9 @@ translucent_attrib is an instance attribute. Instances inherit their
 value from their (possibly itself inherited) class default, unless an
 overriding value has been stored on the object itself.
 
-mandatory_attrib (an object attribute) has an undefined default, therefore
-warnings will be issued when the program tries to access the attribute before
-the object sets a value.
+mandatory_attrib has an undefined default, therefore warnings will be issued
+if the program tries to access the attribute before it sets a value on the
+object.
 
 =head1 CLASS ATTRIBUTE ACCESSOR METHOD
 
@@ -109,11 +109,12 @@ sub Attrib($;$;$) {
 		my ( $Attr, $attr );
 
 		walk {
+			my $pkg = shift;
 
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$Attr = \%{$_.'::Attrib'};
-			} # end scope no strict 'refs'
+				$Attr = \%{$pkg.'::Attrib'};
+			} # end scope
 
 			foreach $attr ( keys %$Attr ) {
 				$attribs{$attr} = $Attr->{$attr}
@@ -129,12 +130,13 @@ sub Attrib($;$;$) {
 	my $ClassAttrib = walk {	
 			my $pkg = shift;
 			my $ClassAttrib;
+
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$ClassAttrib = \%{"$pkg\::Attrib"};
+				$ClassAttrib = \%{$pkg.'::Attrib'};
 			} # end scope
 
-			return exists $ClassAttrib->{$name}
+			exists $ClassAttrib->{$name}
 				? $ClassAttrib : undef
 		} $class;
 
@@ -180,7 +182,7 @@ sub attrib($;$;$) {
 
 	if ( @_ > 1 ) {
 		if ( defined $value ) {
-			$self->{__PACKAGE__}->{$key} = $value
+			$self->{__PACKAGE__}->{$key} = $value;
 		} else {
 			delete $self->{__PACKAGE__}->{$key};
 		}
@@ -198,11 +200,15 @@ Each attribute has a corresponding accessor method with the same name.
 
 =head2 $this->foo();
 
-Equivalent to C<< $this->attrib( 'foo' ); >>.
+Equivalent to C<< $this->attrib( 'foo' ); >>
 
 =head2 $this->foo( value );
 
-Equivalent to C<< $this->attrib( 'foo', $value ); >>.
+Equivalent to C<< $this->attrib( 'foo', $value ); >>
+
+=head2 $this->Bar();
+
+Equivalent to C<< $this->Attrib( 'Bar' ); >>
 
 =cut
 
@@ -229,17 +235,16 @@ sub AUTOLOAD {
 
 	# redispatch; the calling program might not be thinking about us at all
 	unless ( defined $pkg ) {
-		$pkg = otherpkg( $this, 'AUTOLOAD' );
 
-		unless ( defined $pkg ) {
+		unless ( $pkg = otherpkg( $this, 'AUTOLOAD' ) ) {
 			confess( __PACKAGE__ . "->AUTOLOAD: ",
 				"No attribute '$name' found via '$AUTOLOAD'." )
 		}
 
 		{ # scope no strict refs
 			no strict 'refs';
-			${"$pkg\::AUTOLOAD"} = $AUTOLOAD;
-			return &{"$pkg\::AUTOLOAD"}( $this, @_ );
+			${$pkg.'::AUTOLOAD'} = $AUTOLOAD;
+			return &{$pkg.'::AUTOLOAD'}( $this, @_ );
 		} # end scope
 
 	}
@@ -279,7 +284,7 @@ it cannot be instantiated without some impolite bless hackery.
 
 =over 
 
-=item K Cody <kcody@jilcraft.com>
+=item K Cody <kcody@users.sourceforge.net>
 
 =back
 
