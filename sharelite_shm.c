@@ -4,7 +4,7 @@
  *
  * Derived from parts of IPC::ShareLite by Maurice Aubrey.
  *
- * Copyright (c) 2/2005 by K Cody <kcody@jilcraft.com>
+ * Copyright (c) 2/2005 by K Cody <kcody@users.sourceforge.net>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at

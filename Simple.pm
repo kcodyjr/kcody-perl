@@ -3,7 +3,7 @@ package IPC::Shm::Simple;
 use strict;
 
 #
-# Copyright (C) 2005 by K Cody <kcody@jilcraft.com>
+# Copyright (C) 2005 by K Cody <kcody@users.sourceforge.net>
 #
 # Although this package as a whole is derived from
 # IPC::ShareLite, this particular file is a new work.
@@ -30,9 +30,13 @@ and comparing it stringwise.
 
 =item 1. Document _init interface and _fresh interface
 
-=item 2. Add %ObjOwner to track instance cache entries across forks
+=item 2. Trap thread creation and wipe ObjCache/ObjOwner
 
-=item 3. Trap thread creation and wipe ObjCache/ObjOwner
+=item 3. Complete API documentation
+
+=item 4. Add portability documentation
+
+=item 5. Change valid to is_valid
 
 =back
 
@@ -65,19 +69,26 @@ $VERSION = '1.00';
 
 =head1 CONSTRUCTORS
 
-=head2 $this->bind( ipckey );
+=head2 $this->bind( ipckey, [size], [mode] );
 
 Attach to the shared memory segment identified by ipckey, whether it
 exists already or not.
 
+If a segment must be created, size and permissions may be specified as
+for the C<< $this->create() >> call. Otherwise, the class defaults will apply.
+
+Returns blessed reference on success, undef on failure.
+
+Throws an exception on invalid parameters.
+
 =cut
 
 sub bind($$) {
-	my ( $this, $ipckey ) = @_;
+	my ( $this, $ipckey, $size, $mode ) = @_;
 	my ( $self );
 
 	unless ( $self = $this->attach( $ipckey ) ) {
-		$self = $this->create( $ipckey );
+		$self = $this->create( $ipckey, $size, $mode );
 		$self->unlock();
 	}
 
@@ -85,12 +96,16 @@ sub bind($$) {
 }
 
 { # BEGIN ObjCache and ObjIndex lexical scope
-my %ObjCache = ();
-my %ObjIndex = ();
+my %ObjIndex = ();		# cache key=ipckey value=shmid
+my %ObjCache = ();		# cache key=shmid  value=instance
 
 =head2 $this->attach( ipckey );
 
 Attach to the shared memory segment identified by ipckey if it exists.
+
+Returns blessed reference on success, undef on failure.
+
+Throws an exception on invalid parameters.
 
 =cut
 
@@ -110,25 +125,26 @@ sub attach($$) {
 	confess( __PACKAGE__ . "->attach: Called with IPC_PRIVATE!." )
 		if $ipckey == IPC_PRIVATE;
 
-	# NOTE: using share as private shmid here
+	# NOTE: using $share as private shmid here
 	if ( $share = $ObjIndex{$ipckey} ) {
 		if ( $self = $ObjCache{$share} ) {
-			return $self if $self->valid;
+			return $self if $self->is_valid;
 			delete $ObjCache{$share};
 		}
 		delete $ObjIndex{$ipckey};
 	}
 
-	# NOTE: using share as sharelite handle here
-	return undef unless
-		$share = sharelite_attach( $ipckey );
+	# NOTE: using $share as sharelite handle here
+	$share = sharelite_attach( $ipckey )
+		or return undef;
 
 	bless $self = {}, ref( $this ) || $this;
 
 	$self->{__PACKAGE__}->{share} = $share;
 
 	# inform subclasses that an uncached attachment has occurred
-	return undef unless $self->_attach();
+	$self->_attach()
+		or return undef;
 
 	# save the attached object in the cache
 	$ObjIndex{$ipckey} = sharelite_shmid( $share );
@@ -152,6 +168,8 @@ is assumed if no argument is provided.
 The optional parameters segsize and permissions default to C<< $this->Size() >>
 and C<< $this->Mode() >>, respectively.
 
+Returns blessed reference on success, undef on failure.
+
 =cut
 
 sub create($;$) {
@@ -164,8 +182,8 @@ sub create($;$) {
 
 	$class = ref( $this ) || $this;
 
-	return undef unless
-		$share = sharelite_create( $ipckey, $size, $mode );
+	$share = sharelite_create( $ipckey, $size, $mode )
+		or return undef;
 
 	bless $self = {}, $class;
 
@@ -205,20 +223,21 @@ sub shmat($$) {
 
 	# NOTE: using share as private shmid here
 	if ( $self = $ObjCache{$shmid} ) {
-		return $self if $self->valid;
+		return $self if $self->is_valid;
 		delete $ObjCache{$shmid};
 	}
 
 	# NOTE: using share as sharelite handle here
-	return undef unless
-		$share = sharelite_shmat( $shmid );
+	$share = sharelite_shmat( $shmid )
+		or return undef;
 
 	bless $self = {}, ref( $this ) || $this;
 
 	$self->{__PACKAGE__}->{share} = $share;
 
 	# inform subclasses that an uncached attachment has occurred
-	return undef unless $self->_attach();
+	$self->_attach()
+		or return undef;
 
 	# save the attached object in the cache
 	$ObjCache{$shmid} = $self;
@@ -233,20 +252,24 @@ sub shmat($$) {
 Uncaches the referenced instance, and causes the underlying shared
 memory segments to be removed from the operating system when DESTROYed.
 
+Returns 1 on success, undef on failure.
+
 =cut
 
 sub remove($) {
 	my ( $self ) = @_;
 	my ( $share, $shmid, $ipckey );
 
-	$share  = $self->{__PACKAGE__}->{share};
+	$share  = $self->{__PACKAGE__}->{share}
+		or return undef;
+
 	$shmid  = sharelite_shmid( $share );
 	$ipckey = sharelite_key( $share );
 
 	delete $ObjCache{$shmid};
 	delete $ObjIndex{$ipckey};
 
-	return sharelite_remove( $share ) != -1;
+	return ( sharelite_remove( $share ) == -1 ) ? undef : 1;
 }
 
 } # END scope
@@ -311,16 +334,16 @@ sub flags($) {
 	return sharelite_flags( shift->{__PACKAGE__}->{share} );
 }
 
-sub valid($) {
-	return sharelite_valid( shift->{__PACKAGE__}->{share} );
-}
-
 sub length($) {
 	return sharelite_length( shift->{__PACKAGE__}->{share} );
 }
 
 sub serial($) {
 	return sharelite_serial( shift->{__PACKAGE__}->{share} );
+}
+
+sub is_valid($) {
+	return sharelite_is_valid( shift->{__PACKAGE__}->{share} );
 }
 
 sub nsegments($) {

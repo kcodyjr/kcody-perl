@@ -1,3 +1,15 @@
+/*
+ * sharelite.h - part of IPC::Shm::Simple
+ *
+ * Originally part of IPC::ShareLite by Maurice Aubrey.
+ *
+ * Adapted 2/2005 by K Cody <kcody@users.sourceforge.net>
+ *
+ * This code may be modified or redistributed under the terms
+ * of either the Artistic or GNU General Public licenses, at
+ * the modifier or redistributor's discretion.
+ *
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +19,6 @@
 #include <sys/file.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <errno.h>
 
 #ifndef errno 
 extern int errno;
@@ -431,8 +442,7 @@ int sharelite_flags( Share *share ) {
 	return share->flags;
 }
 
-int sharelite_valid( Share *share ) {
-
+int sharelite_is_valid( Share *share ) {
 
 	CALL_NEEDS_SHARE(-1);
 
@@ -492,5 +502,10 @@ int sharelite_chunk_seg_size( Share *share, int segsize ) {
 	return share->head->shminfo->size_chunkseg;
 }
 
+int sharelite_is_valid( Share *share ) {
 
+	CALL_NEEDS_SHARE(-1);
+
+	return _sharelite_sem_access( share->semid ) == 0;
+}
 

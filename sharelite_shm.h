@@ -4,7 +4,7 @@
  *
  * Derived from parts of IPC::ShareLite by Maurice Aubrey.
  *
- * Copyright (c) 2/2005 by K Cody <kcody@jilcraft.com>
+ * Copyright (c) 2/2005 by K Cody <kcody@users.sourceforge.net>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at
@@ -23,7 +23,7 @@
 
 /* TODO: document which share-> fields are read as arguments */
 
-/* attach to an existing key or shmid and init its    */
+/* attach to an existing key or shmid and init it     */
 int _sharelite_shm_attach( Share *share );
 
 /* create a new shmid and initialize it, expects key  */

@@ -1,0 +1,38 @@
+
+INTRO:
+
+This is IPC::Shm::Simple, a PERL module that provides storage of simple data
+in SysV shared memory segments.
+
+It is a derivative of IPC::ShareLite by Maurice Aubrey.
+
+API DOCUMENTATION:
+
+It works through an object oriented interface. See the POD's and test.pl.
+
+PACKAGE DEPENDENCIES:
+
+	Test::More
+		Test::Harness
+		Storable
+
+	Class::Attrib
+		Class::Multi
+
+
+AUTHOR CONTACT INFO:
+
+Bug reports, questions, and flames should be sent to:
+
+K Cody <kcody@users.sourceforge.net>
+
+COPYRIGHT / LICENSE:
+
+Copyright (C) 2005 K Cody <kcody@users.sourceforge.net>
+Copyright (C) 1998-2002 Maurice Aubrey <maurice@hevanet.com>
+
+This software may be modified and/or redistributed under the terms of
+either the Artistic License or the GNU General Public License, at the
+discretion of the modifier/redistributor. These are the same terms
+under which PERL itself is distributed.
+

@@ -4,7 +4,7 @@
  *
  * Derived from parts of IPC::ShareLite by Maurice Aubrey.
  *
- * Copyright (c) 2/2005 by K Cody <kcody@jilcraft.com>
+ * Copyright (c) 2/2005 by K Cody <kcody@users.sourceforge.net>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at
@@ -125,6 +125,16 @@ inline
 int _sharelite_sem_remove( int semid ) {
 
 	if ( semctl( semid, 0, IPC_RMID ) == -1 )
+		return -1;
+
+	return 0;
+}
+
+/* access the semaphore somehow to see that it still exists */
+inline
+int _sharelite_sem_access( int semid ) {
+
+	if ( semctl( semid, 0, GETPID ) == -1 )
 		return -1;
 
 	return 0;

@@ -4,7 +4,7 @@
  *
  * Originally part of IPC::ShareLite by Maurice Aubrey
  *
- * Adapted 2/2004 by K Cody <kcody@jilcraft.com>
+ * Adapted 2/2004 by K Cody <kcody@users.sourceforge.net>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at
@@ -124,7 +124,7 @@ sharelite_flags(share)
 	Share*		share
 
 int
-sharelite_valid(share)
+sharelite_is_valid(share)
 	Share*		share
 
 int
