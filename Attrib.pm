@@ -102,7 +102,6 @@ Returns the newly assigned value, for convenience.
 sub Attrib($;$;$) {
 	my $this = shift;
 	my $class = ref( $this ) || $this;
-	my ( $name, $value ) = @_;
 
 	unless ( @_ ) {
 		my %attribs = ();
@@ -126,6 +125,8 @@ sub Attrib($;$;$) {
 
 		return \%attribs;
 	}
+
+	my ( $name, $value ) = @_;
 
 	my $ClassAttrib = walk {	
 			my $pkg = shift;
@@ -172,13 +173,14 @@ is 'undef', removes any previously stored instance-specific value.
 
 sub attrib($;$;$) {
 	my $self = shift;
-	my ( $key, $value ) = @_;
 
 	# class reference, might want to test or change a default
 	return $self->Attrib( @_ ) unless ref $self;
 
 	# never return a reference to the real data ;)
 	return dclone( $self->{__PACKAGE__} ) unless @_;
+
+	my ( $key, $value ) = @_;
 
 	if ( @_ > 1 ) {
 		if ( defined $value ) {
@@ -221,37 +223,37 @@ sub AUTOLOAD {
 	$name =~ s/.*://;
 
 	# check to see if the requested attribute exists
-	my $pkg = walk {	
+	my $class = walk {	
 			my $pkg = shift;
 			my $ClassAttrib;
 			{ # scope no strict 'refs'
 				no strict 'refs';
-				$ClassAttrib = \%{"$pkg\::Attrib"};
+				$ClassAttrib = \%{$pkg.'::Attrib'};
 			} # end scope
 
-			return exists $ClassAttrib->{$name}
+			exists $ClassAttrib->{$name}
 				? $pkg : undef
 		} ref( $this ) || $this;
 
 	# redispatch; the calling program might not be thinking about us at all
-	unless ( defined $pkg ) {
+	unless ( defined $class ) {
 
-		unless ( $pkg = otherpkg( $this, 'AUTOLOAD' ) ) {
+		unless ( $class = otherpkg( $this, 'AUTOLOAD' ) ) {
 			confess( __PACKAGE__ . "->AUTOLOAD: ",
 				"No attribute '$name' found via '$AUTOLOAD'." )
 		}
 
 		{ # scope no strict refs
 			no strict 'refs';
-			${$pkg.'::AUTOLOAD'} = $AUTOLOAD;
-			return &{$pkg.'::AUTOLOAD'}( $this, @_ );
+			${$class.'::AUTOLOAD'} = $AUTOLOAD;
+			return &{$class.'::AUTOLOAD'}( $this, @_ );
 		} # end scope
 
 	}
 
 	# Build fully qualified name --WHERE DATA WAS FOUND--
 	# this keeps code memory to a minimum, while preserving inheritance
-	my $sym = $pkg . '::' . $name;
+	my $sym = $class . '::' . $name;
 	my $ref;
 
 	# install symbol table reference
