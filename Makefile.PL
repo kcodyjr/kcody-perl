@@ -8,7 +8,7 @@ WriteMakefile(
     'LIBS'	=> [''],   # e.g., '-lm' 
     'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
     'INC'	=> '',     # e.g., '-I/usr/include/other' 
-    'OBJECT'    => 'sharelite_shm.o Simple.o',
+    'OBJECT'    => 'sharelite.o sharelite_shm.o Simple.o',
     'dist'      => {
         COMPRESS => 'gzip', SUFFIX => 'gz',
     },          

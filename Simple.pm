@@ -1,5 +1,7 @@
 package IPC::Shm::Simple;
 
+our $VERSION = 1.0;
+
 #
 # Copyright (C) 2005 by K Cody <kcody@jilcraft.com>
 # Do not distribute under any circumstances whatsoever.

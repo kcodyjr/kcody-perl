@@ -24,7 +24,7 @@
 
 /* --- SHARED SEGMENT NODE FUNCTIONS --- */
 
-/* shmat to an existing segment and return a valid Node structure */
+/* shmat to an existing segment shmid and return a valid Node structure */
 Node *_shmseg_shmat( int shmid ) {
 	char *shmaddr;
 	Node *node;
@@ -47,47 +47,6 @@ Node *_shmseg_shmat( int shmid ) {
 	return node;
 }
 
-/* shmget a new segment and return a valid Node structure */
-Node *_shmseg_alloc( Share *share ) {
-	int flags, ssize, shmid, is_top_node;
-	key_t ipckey;
-	Node *node;
-
-	flags = share->flags | IPC_CREAT | IPC_EXCL;
-
-	if ( share->head == NULL ) {
-		/* allocating the top segment */
-		ssize  = share->size_top;
-		ipckey = share->key;
-		is_top_node = 1;
-	} else {
-		/* allocating a linked segment */
-		ssize  = share->size_seg;
-		ipckey = IPC_PRIVATE;
-		is_top_node = 0;
-	}
-
-	if ( ( shmid = shmget( ipckey, ssize, flags ) ) == -1 )
-		return NULL;
-
-	if ( ( node = _shmseg_shmat( shmid ) ) == NULL )
-		return NULL;
-
-	node->shmhead->shm_magic  = SHARELITE_MAGIC;
-	node->shmhead->next_shmid = -1;
-
-	if ( is_top_node ) {
-		node->shminfo  = (Descriptor *) node->shmdata;
-		node->shmdata += sizeof( Descriptor );
-		node->shminfo->seg_semid   = -1;
-		node->shminfo->data_serial = 0;
-		node->shminfo->data_length = 0;
-	}
-
-	return node;
-}
-
-
 /* shmdt from a segment and free its Node structure */
 int _shmseg_shmdt( Node *node ) {
 
@@ -100,7 +59,7 @@ int _shmseg_shmdt( Node *node ) {
 }
 
 /* shmdt from a segment, remove it, and free its Node structure */
-int _shmseg_undef( Share *share, Node *node ) {
+int _shmseg_undef( Node *node ) {
 	int rc, shmid;
 
 	shmid = node->shmid;
@@ -114,25 +73,98 @@ int _shmseg_undef( Share *share, Node *node ) {
 	return 0;
 }
 
+/* allocate and zero a new segment and return a valid Node structure */
+Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
+	Node *node;
+	int myflags, shmid;
+
+	myflags = flags | IPC_CREAT | IPC_EXCL;
+
+	if ( ( shmid = shmget( key, size, myflags ) ) == -1 )
+		return NULL;
+
+	if ( ( node = _shmseg_shmat( shmid ) ) == NULL ) {
+		shmctl( shmid, IPC_RMID, NULL );
+		return NULL;
+	}
+
+	node->shmhead->shm_magic  = SHARELITE_MAGIC;
+	node->shmhead->next_shmid = -1;
+
+	/* FIXME: fetch actual size via shmctl */
+
+	if ( is_top_node ) {
+
+		node->shminfo  = (Descriptor *) node->shmdata;
+		node->shmdata += sizeof( Descriptor );
+
+		node->shminfo->seg_perms     = flags;
+		node->shminfo->size_topseg   = size;
+		node->shminfo->size_chunkseg = size;
+
+		node->shminfo->seg_semid     = -1;
+		node->shminfo->data_serial   = 0;
+		node->shminfo->data_length   = 0;
+
+	}
+
+	return node;
+}
+
 
 /* --- SHARED SEGMENT LIST FUNCTIONS --- */
 
+/* attach to an existing top segment given a shmid or ipckey */
+int _sharelite_shm_attach( Share *share ) {
+	Node *node;
+	key_t key;
+
+	if ( share->shmid == -1 ) {
+		if ( ( share->shmid = shmget( share->key, 0, 0 ) ) == -1 )
+			return -1;
+	}
+
+	if ( ( node = _shmseg_shmat( share->shmid ) ) == NULL )
+		return -1;
+
+	/* the shmid doesn't point to a sharelite segment */
+	if ( node->shmhead->shm_magic != SHARELITE_MAGIC ) {
+		_shmseg_shmdt( node );
+		errno = EFAULT;
+		return -1;
+	}
+
+	share->head = share->tail = node;
+
+	return 0;
+}
+
+/* create a new top segment given an ipckey (possibly IPC_PRIVATE) */
+int _sharelite_shm_create( Share *share, int size ) {
+	Node *node;
+	int flags;
+
+	flags = share->flags;
+
+	if ( ( node = _shmseg_alloc( share->key, size, flags, 1 ) ) == NULL )
+		return -1;
+
+	share->flags      = flags;
+	share->shmid      = node->shmid;
+	share->size_data  = node->shminfo->size_topseg 
+				- ( sizeof( Header ) + sizeof( Descriptor ) );
+
+	share->head = share->tail = node;
+
+	return 0;
+}
+
 /* attach the next segment, creating one if necessary */
-int _shmseg_append( Share *share ) {
+int _sharelite_shm_append( Share *share ) {
 	int shmid;
 	Node *node;
 
-	if ( share->tail == NULL ) {
-		/* create a new top segment */
-
-		if ( ( node = _shmseg_alloc( share ) ) == NULL )
-			return -1;
-
-		share->head  = node;
-		share->tail  = node;
-		share->shmid = node->shmid;
-
-	} else if ( ( shmid = share->tail->shmhead->next_shmid ) != -1 ) {
+	if ( ( shmid = share->tail->shmhead->next_shmid ) != -1 ) {
 		/* attach an existing linked segment */
 
 		if ( ( node = _shmseg_shmat( shmid ) ) == NULL )
@@ -150,10 +182,19 @@ int _shmseg_append( Share *share ) {
 
 	} else {
 		/* create a new linked segment */
+		int key, size, mode;
 
-		if ( ( node = _shmseg_alloc( share ) ) == NULL )
+		key  = IPC_PRIVATE;
+		size = share->head->shminfo->size_chunkseg;
+		mode = share->head->shminfo->seg_perms;
+
+		if ( ( node = _shmseg_alloc( key, size, mode, 0 ) ) == NULL )
 			return -1;
 
+		/* update shared linked list */
+		share->tail->shmhead->next_shmid = node->shmid;
+
+		/* update process private linked list */
 		share->tail->next = node;
 		share->tail       = node;
 
@@ -164,20 +205,22 @@ int _shmseg_append( Share *share ) {
 
 
 #define _SHMSEG_TRUNC_SETUP_MACRO_	\
-	if ( share->tail == last )	\
-		return 0;		\
 	if ( last == NULL ) {		\
 		node = share->head;	\
 		share->head = NULL;	\
 		share->tail = NULL;	\
 	} else {			\
 		node = last->next;	\
+		last->next = NULL;	\
 		share->tail = last;	\
 	}
 
 /* nondestructively free stale Node structures   */
-int _shmseg_forget( Share *share, Node *last ) {
+int _sharelite_shm_forget( Share *share, Node *last ) {
 	Node *node, *next;
+
+	if ( share->tail == last )
+		return 0;
 
 	_SHMSEG_TRUNC_SETUP_MACRO_
 
@@ -192,14 +235,16 @@ int _shmseg_forget( Share *share, Node *last ) {
 }
 
 /* remove unneeded segments from the system         */
-int _shmseg_remove( Share *share, Node *last ) {
+int _sharelite_shm_remove( Share *share, Node *last ) {
 	Node *node, *next;
 
 	_SHMSEG_TRUNC_SETUP_MACRO_
 
+	last->shmhead->next_shmid = -1;
+
 	while ( node != NULL ) {
 		next = node->next;
-		if ( _shmseg_undef( share, node ) == -1 )
+		if ( _shmseg_undef( node ) == -1 )
 			return -1;
 		node = next;
 	}

@@ -341,10 +341,8 @@ sharelite_create(key, segsize, flags)
 	int		flags
 
 Share*
-sharelite_attach(key, segsize, flags)
+sharelite_attach(key)
 	key_t		key
-	int		segsize
-	int		flags
 
 int
 sharelite_shmdt(share)
@@ -356,6 +354,11 @@ sharelite_remove(share)
 
 int
 sharelite_lock(share, flags)
+	Share*		share
+	int		flags
+
+int
+sharelite_locked(share, flags)
 	Share*		share
 	int		flags
 
@@ -386,8 +389,17 @@ sharelite_shmid(share)
 	Share*		share
 
 int
+sharelite_length(share)
+	Share*		share
+
+int
 sharelite_serial(share)
 	Share*		share
+
+int
+sharelite_segsize(share,size)
+	Share*		share
+	int		size
 
 int
 sharelite_nsegments(share)

@@ -21,19 +21,25 @@
 
 /* --- SHARED SEGMENT LIST FUNCTIONS --- */
 
+/* attach to an existing key or shmid and init its    */
+int _sharelite_shm_attach( Share *share );
+
+/* create a new shmid and initialize it, expects key  */
+int _sharelite_shm_create( Share *share, int size );
+
 /* attach the next segment, creating one if necessary *
  * called when the Node list is too short             */
-int _shmseg_append( Share *share );
+int _sharelite_shm_append( Share *share );
 
 /* nondestructively free stale Node structures  *
  * called when another process removed segments *
  * or when the whole share is being detached    */
-int _shmseg_forget( Share *share, Node *last );
+int _sharelite_shm_forget( Share *share, Node *last );
 
 /* remove unneeded segments from the system            *
  * called when a write operation leaves extra segments *
  * or when the whole share is being deallocated        */
-int _shmseg_remove( Share *share, Node *last );
+int _sharelite_shm_remove( Share *share, Node *last );
 
 
 #endif /* define __SHARELITE_SHM_H__ */
