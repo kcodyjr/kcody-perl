@@ -8,7 +8,7 @@
 
 BEGIN { $| = 1; print "1..8\n"; }
 END {print "not ok 1\n" unless $loaded;}
-use IPC::ShareLite qw( LOCK_EX LOCK_SH LOCK_UN LOCK_NB );
+use IPC::Shm::Simple qw( LOCK_EX LOCK_SH LOCK_UN LOCK_NB );
 $loaded = 1;
 print "ok 1\n";
 
@@ -22,11 +22,11 @@ $num = 1;
 
 # Test object construction
 $num++;
-my $share = new IPC::ShareLite( -key     => $KEY, 
-                                -create  => 'yes', 
-                                -destroy => 'yes', 
-                                -size    => 100 );
+my $share = IPC::Shm::Simple->create($KEY, 100, 0660);
 print (defined $share ? "ok $num\n" : "not ok $num\n");
+
+# mark share for deletion
+$share->remove();
 
 # Store value
 $num++;

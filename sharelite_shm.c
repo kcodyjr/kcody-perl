@@ -10,6 +10,8 @@
  * of either the Artistic or GNU General Public licenses, at
  * the modifier or redistributor's discretion.
  *
+ * TODO: Add segment usage tracking.
+ *
  */
 
 #include <stdlib.h>
@@ -33,6 +35,7 @@ Node *_shmseg_shmat( int shmid ) {
 		return NULL;
 
 	if ( ( node = malloc( sizeof( Node ) ) ) == NULL ) {
+		shmdt( shmaddr );
 		errno = ENOMEM; /* is this the right thing to do? */
 		return NULL;
 	}
@@ -47,28 +50,16 @@ Node *_shmseg_shmat( int shmid ) {
 	return node;
 }
 
-/* shmdt from a segment and free its Node structure */
-int _shmseg_shmdt( Node *node ) {
+/* shmdt from a segment and free its Node structure, possibly remove segment */
+int _shmseg_shmdt( Node *node, int remove ) {
+
+	if ( shmctl( node->shmid, IPC_RMID, NULL ) == -1 )
+		return -1;
 
 	if ( shmdt( node->shmhead ) == -1 )
 		return -1;
 
 	free( node );
-
-	return 0;
-}
-
-/* shmdt from a segment, remove it, and free its Node structure */
-int _shmseg_undef( Node *node ) {
-	int rc, shmid;
-
-	shmid = node->shmid;
-
-	if ( _shmseg_shmdt( node ) == -1 )
-		return -errno;
-
-	if ( shmctl( shmid, IPC_RMID, NULL ) == -1 )
-		return -errno;
 
 	return 0;
 }
@@ -117,19 +108,23 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 /* attach to an existing top segment given a shmid or ipckey */
 int _sharelite_shm_attach( Share *share ) {
 	Node *node;
-	key_t key;
+	int shmid;
 
-	if ( share->shmid == -1 ) {
-		if ( ( share->shmid = shmget( share->key, 0, 0 ) ) == -1 )
+	if ( ( shmid = share->shmid ) == -1 ) {
+
+		if ( ( shmid = shmget( share->key, 0, 0 ) ) == -1 )
 			return -1;
+
+		share->shmid = shmid;
+
 	}
 
-	if ( ( node = _shmseg_shmat( share->shmid ) ) == NULL )
+	if ( ( node = _shmseg_shmat( shmid ) ) == NULL )
 		return -1;
 
 	/* the shmid doesn't point to a sharelite segment */
 	if ( node->shmhead->shm_magic != SHARELITE_MAGIC ) {
-		_shmseg_shmdt( node );
+		_shmseg_shmdt( node, 0 );
 		errno = EFAULT;
 		return -1;
 	}
@@ -149,7 +144,6 @@ int _sharelite_shm_create( Share *share, int size ) {
 	if ( ( node = _shmseg_alloc( share->key, size, flags, 1 ) ) == NULL )
 		return -1;
 
-	share->flags      = flags;
 	share->shmid      = node->shmid;
 	share->size_data  = node->shminfo->size_topseg 
 				- ( sizeof( Header ) + sizeof( Descriptor ) );
@@ -161,8 +155,8 @@ int _sharelite_shm_create( Share *share, int size ) {
 
 /* attach the next segment, creating one if necessary */
 int _sharelite_shm_append( Share *share ) {
-	int shmid;
 	Node *node;
+	int shmid;
 
 	if ( ( shmid = share->tail->shmhead->next_shmid ) != -1 ) {
 		/* attach an existing linked segment */
@@ -172,7 +166,7 @@ int _sharelite_shm_append( Share *share ) {
 
 		/* the shmid doesn't point to a sharelite segment */
 		if ( node->shmhead->shm_magic != SHARELITE_MAGIC ) {
-			_shmseg_shmdt( node );
+			_shmseg_shmdt( node, 0 );
 			errno = EFAULT;
 			return -1;
 		}
@@ -200,6 +194,8 @@ int _sharelite_shm_append( Share *share ) {
 
 	}
 
+	node->shminfo = share->head->shminfo;
+
 	return 0;
 }
 
@@ -226,7 +222,7 @@ int _sharelite_shm_forget( Share *share, Node *last ) {
 
 	while ( node != NULL ) {
 		next = node->next;
-		if ( _shmseg_shmdt( node ) == -1 )
+		if ( _shmseg_shmdt( node, 0 ) == -1 )
 			return -1;
 		node = next;
 	}
@@ -244,7 +240,7 @@ int _sharelite_shm_remove( Share *share, Node *last ) {
 
 	while ( node != NULL ) {
 		next = node->next;
-		if ( _shmseg_undef( node ) == -1 )
+		if ( _shmseg_shmdt( node, 1 ) == -1 )
 			return -1;
 		node = next;
 	}

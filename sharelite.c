@@ -16,6 +16,19 @@ extern int errno;
 #include "sharelite_shm.h"
 #include "sharelite_sem.h"
 
+#define CALL_NEEDS_SHARE(A)		\
+	if ( share == NULL ) {		\
+		errno = EINVAL;		\
+		return (A);		\
+	}
+
+#define CALL_NEEDS_SHARE_AND_HEAD(A)		\
+	if (    ( share == NULL )		\
+	     || ( share->head == NULL ) ) {	\
+		errno = EINVAL;			\
+		return (A);			\
+	}
+
 
 /* CREATE / ATTACH SHARED SEGMENT FUNCTIONS */
 
@@ -115,6 +128,8 @@ Share *sharelite_create( key_t key, int segsize, int flags ) {
 /* ignores error conditions; this would be called by a destructor */
 int sharelite_shmdt( Share *share ) {
 
+	CALL_NEEDS_SHARE(-1);
+
 	REQ_EX_LOCK(share);
 
 	if ( share->remove ) {
@@ -133,10 +148,7 @@ int sharelite_shmdt( Share *share ) {
 /* just sets a flag; removal happens on detach, just like the syscall */
 int sharelite_remove( Share *share ) {
 
-	if ( share == NULL ) {
-		errno = EINVAL;
-		return -1;
-	}
+	CALL_NEEDS_SHARE(-1);
 
 	share->remove = 1;
 
@@ -150,6 +162,8 @@ int sharelite_remove( Share *share ) {
  * returns  1 if LOCK_NB specified and operation would block */
 int sharelite_lock(Share *share, int flags) {
 	int nonblock, lockmode, rc;
+
+	CALL_NEEDS_SHARE(-1);
 
 	/* at this layer we demand an argument */
 	if ( ! flags ) {
@@ -236,6 +250,86 @@ int sharelite_lock(Share *share, int flags) {
 /* SHARELITE INPUT-OUTPUT FUNCTIONS */
 
 int sharelite_store( Share *share, char *data, int length ) {
+	char *srcaddr;
+	char *dstaddr;
+	Node *node;
+	int left, size, chunk;
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	REQ_EX_LOCK(share);
+
+	node   = share->head;
+
+	/* set to zero so if the write bombs, we don't get corrupt data */
+	node->shminfo->data_length = 0;
+
+	/* fetch the first and subsequent chunk sizes */
+	size    = share->size_data;
+	chunk   = node->shminfo->size_chunkseg - sizeof( Header );
+
+	/* initialize the copy pointers */
+	dstaddr = node->shmdata;
+	srcaddr = data;
+
+	/* decide if the data will fit in the top segment */
+	if ( length < size ) {
+		size = length;
+		left = 0;
+	} else
+		left = length - size;
+
+	/* copy data to top segment */
+	if ( memcpy( dstaddr, srcaddr, size ) == NULL ) {
+		END_EX_LOCK(share);
+		return -1;
+	}
+
+	/* copy any chunks to their own segments */
+	while ( left ) {
+
+		/* catches other processes freeing shared segments */
+		if ( node->next != NULL ) 
+			if ( node->next->shmid != node->shmhead->next_shmid )
+				if ( _sharelite_forget( share, node ) == -1 ) {
+					END_EX_LOCK(share);
+					return -1;
+				}
+
+		/* catches running into the end of the attached segments */
+		if ( node->next == NULL )
+			if ( _sharelite_append( share ) == -1 ) {
+				END_EX_LOCK(share);
+				return -1;
+			}
+
+		/* advance the pointers */
+		node     = node->next;
+		dstaddr  = node->shmdata;
+		srcaddr += size;
+		size     = ( left > chunk ) ? chunk : left;
+
+		/* copy a chunk to its segment */
+		if ( memcpy( dstaddr, srcaddr, size ) == NULL ) {
+			END_EX_LOCK(share);
+			return -1;
+		}
+
+		/* adjust remaining data size */
+		left -= size;
+
+	}
+
+	/* deallocate unneeded chunk segments */
+	_sharelite_shm_remove( share, node );
+
+	/* increment serial and save length */
+	node->shminfo->data_serial++;
+	node->shminfo->data_length = length;
+
+	END_EX_LOCK(share);
+
+	return 0;
 }
 
 int sharelite_fetch( Share *share, char **data ) {
@@ -244,10 +338,7 @@ int sharelite_fetch( Share *share, char **data ) {
 	Node *node;
 	int length, left, size, chunk;
 
-	if ( share == NULL ) {
-		errno = EINVAL;
-		return -1;
-	}
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
 	node   = share->head;
 	length = node->shminfo->data_length;
@@ -257,8 +348,9 @@ int sharelite_fetch( Share *share, char **data ) {
 
 	REQ_SH_LOCK(share);
 
-	size   = share->size_data;
-	chunk  = node->shminfo->size_chunkseg - sizeof( Header );
+	size    = share->size_data;
+	chunk   = node->shminfo->size_chunkseg - sizeof( Header );
+	srcaddr = node->shmdata;
 
 	if ( length <= size ) {
 		size = length;
@@ -308,40 +400,35 @@ int sharelite_fetch( Share *share, char **data ) {
 
 int sharelite_key( Share *share ) {
 
-	if ( share == NULL )
-		return -1;
+	CALL_NEEDS_SHARE(-1);
 
 	return share->key;
 }
 
 int sharelite_shmid( Share *share ) {
 
-	if ( share == NULL )
-		return -1;
+	CALL_NEEDS_SHARE(-1);
 
 	return share->shmid;
 }
 
 int sharelite_length( Share *share ) {
 
-	if ( ( share == NULL ) || ( share->head == NULL ) )
-		return -1;
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
 	return share->head->shminfo->data_length;
 }
 
 int sharelite_serial( Share *share ) {
 
-	if ( ( share == NULL ) || ( share->head == NULL ) )
-		return -1;
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
 	return share->head->shminfo->data_serial;
 }
 
 int sharelite_segsize( Share *share, int segsize ) {
 
-	if ( ( share == NULL ) || ( share->head == NULL ) )
-		return -1;
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
 	if ( segsize > 0 ) {
 		/* trying to set a new segment size */
@@ -359,6 +446,8 @@ int sharelite_segsize( Share *share, int segsize ) {
 int sharelite_nsegments( Share *share ) {
 	Node *node;
 	int count;
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
 	count = 0;
 	node  = share->head;

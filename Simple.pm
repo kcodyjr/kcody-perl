@@ -50,11 +50,10 @@ use warnings;
 ###
 
 use Carp;
+use Fcntl qw( :flock );
 use Class::Attrib;
-use Class::Lockable;
-use IPC::ShareLite qw( :lock );
 
-our @ISA = qw( Class::Attrib Class::Lockable );
+our @ISA = qw( Class::Attrib );
 
 our %Attrib = (
 	Mode		=> 0660,
@@ -239,23 +238,41 @@ sub store($$) {
 
 
 ###
-### Underlying Object Lock Method
+### Object Lock Methods - Class::Lockable friendly
 ###
+
+sub lock($$) {
+	return shift->_lock( @_ );
+}
 
 sub _lock($$) {
 	my ( $self, $flag ) = @_;
-	my $rc;
 
-	if ( $rc = $self->{_shm}->lock( $flag ) ) {
+	my $rc = sharelite_lock( $self->{__PACKAGE__}->{share}, $flag );
 
-		$self->{_lock} = $flag;
-	} elsif ( not defined $rc ) {
-
-		# IPC::ShareLite->lock returns 0 on busy, undef on failure
-		carp( __PACKAGE__ . "->lock: failed: $!" );
+	if ( $rc == -1 ) {
+		carp( __PACKAGE__ . "->_lock: $!" );
+		return undef;
 	}
 
-	return defined $rc ? $rc != 0 : 0;
+	return $rc == 0;
+}
+
+sub locked($$) {
+	return shift->_locked( @_ );
+}
+
+sub _locked($$) {
+	my ( $self, $flag ) = @_;
+
+	my $rc = sharelite_locked( $self->{__PACKAGE__}->{share}, $flag );
+
+	if ( $rc == -1 ) {
+		carp( __PACKAGE__ . "->_locked: $!" );
+		return undef;
+	}
+
+	return $rc != 0;
 }
 
 
@@ -382,7 +399,7 @@ sub _new($$$) {
 	}
 
 	return undef unless $shm;
-	return undef unless $self = $this->SUPER::_new();
+	return undef unless bless $self = {}, ref( $this ) || $this;
 
 	$ObjCache{$key} = $self;
 	$self->_init();

@@ -24,12 +24,16 @@
 /* --- DEFINE MACROS FOR SEMAPHORE OPERATIONS --- *
  *   assumes called with Share from sharelite.h   */
 
+/* Next six macros are raw semaphore set/release lock commands */
+
 #define GET_EX_LOCK(A)     semop((A)->semid, &ex_lock[0],    3)
 #define GET_EX_LOCK_NB(A)  semop((A)->semid, &ex_lock_nb[0], 3)
 #define REL_EX_LOCK(A)     semop((A)->semid, &ex_unlock[0],  1)
 #define GET_SH_LOCK(A)     semop((A)->semid, &sh_lock[0],    2)
 #define GET_SH_LOCK_NB(A)  semop((A)->semid, &sh_lock_nb[0], 2)
 #define REL_SH_LOCK(A)     semop((A)->semid, &sh_unlock[0],  1) 
+
+/* Next two macros indicate the enclosed block requires an exclusive lock */
 
 #define REQ_EX_LOCK(A)						\
 		if ( ! ( (A)->lock & LOCK_EX ) ) {		\
@@ -49,6 +53,8 @@
 					return -1;		\
 		}
 
+/* Next two macros indicate the enclosed block requires a shared lock */
+
 #define REQ_SH_LOCK(A)						\
 		if ( (A)->lock & LOCK_UN ) 	 		\
 			if ( GET_SH_LOCK((A)) < 0 )		\
@@ -58,7 +64,6 @@
 		if ( (A)->lock & LOCK_UN )			\
 			if ( REL_SH_LOCK((A)) < 0 )		\
 				return -1;
-
 
 
 /* --- DEFINE STRUCTURES FOR MANIPULATING SEMAPHORES --- */
@@ -102,11 +107,13 @@ int _sharelite_sem_create( int flags ) {
 
 	flags = flags | IPC_CREAT | IPC_EXCL;
 
-	if ( semid = semget( IPC_PRIVATE, 2, flags ) < 0 )
+	if ( semid = semget( IPC_PRIVATE, 2, flags ) == -1 )
 		return -1;
 
-	if ( semop( semid, &ex_lock[0], 3 ) < 0 )
+	if ( semop( semid, &ex_lock[0], 3 ) == -1 ) {
+		semctl( semid, 0, IPC_RMID );
 		return -1;
+	}
 
 	return semid;
 }
@@ -115,7 +122,7 @@ int _sharelite_sem_create( int flags ) {
 inline
 int _sharelite_sem_remove( int semid ) {
 
-	if ( semctl( semid, 0, IPC_RMID ) < 0 )
+	if ( semctl( semid, 0, IPC_RMID ) == -1 )
 		return -1;
 
 	return 0;
