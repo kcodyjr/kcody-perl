@@ -10,5 +10,5 @@ KEY
 
 OUTPUT
 SHARE
-		sv_setiv($arg, (I32) $var);
+		sv_setiv($arg, (long) $var);
 	

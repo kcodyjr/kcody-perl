@@ -1,7 +1,6 @@
 package IPC::Shm::Simple;
 
 use strict;
-use warnings;
 
 #
 # Copyright (C) 2005 by K Cody <kcody@jilcraft.com>
