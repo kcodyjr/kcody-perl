@@ -14,3 +14,4 @@ sharelite_shm.h
 sharelite_shm.c
 typemap
 test.pl
+META.yml                                 Module meta-data (added by MakeMaker)
