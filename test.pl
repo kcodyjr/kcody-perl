@@ -4,7 +4,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 27;
+use Test::More tests => 28;
 
 use Fcntl qw( :flock );
 use IPC::Shm::Simple;
@@ -37,15 +37,18 @@ is( $share->length, 0, '... check zero data serial' );
 undef $share;
 ok( 1, '... detach from it' );
 
-# try to reattach to it
+# reattach to it
 $share = IPC::Shm::Simple->attach($KEY);
-ok( defined $share, '... try to reattach, expect success' );
+ok( defined $share, '... reattach to it' );
 
-# remove it
-ok( $share->remove(), '... remove it from the system' );
+# set its removal flag
+ok( $share->remove(), 'remove it from the system' );
+
+# actually remove it
+undef $share;
+ok( 1, '... undefine to trigger destructor' );
 
 # try to reattach to it
-undef $share;
 $share = IPC::Shm::Simple->attach($KEY);
 is( $share, undef, '... try to reattach, expect failure' );
 
@@ -107,7 +110,7 @@ if ($pid == 0) {
   wait;
   ok( 1, '... child process completed' );
 
-  $share->lock( LOCK_EX );
+  $share->lock( LOCK_SH );
   is( $share->fetch, 2000, '... check stored value' );
   is( $share->serial, 2003, '... check serial number' );
   is( $share->length, 4, '... check data length' );
@@ -115,7 +118,7 @@ if ($pid == 0) {
 }
 
 # mark share for deletion
-ok( $share->remove(), 'clean up the segment' );
+ok( $share->remove(), 'remove segment from the system' );
 
 # cause undefine - test returns true to prove the script is still running
 undef $share;

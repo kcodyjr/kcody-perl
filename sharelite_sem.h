@@ -96,7 +96,7 @@ static struct sembuf sh_lock_nb[2] = {
   { 0, 1, (SEM_UNDO | IPC_NOWAIT) }	/* assert shared read lock */
 };                
 static struct sembuf sh_unlock[1] = {
-  { 1, -1, (SEM_UNDO | IPC_NOWAIT) }	/* remove shared read lock */
+  { 0, -1, (SEM_UNDO | IPC_NOWAIT) }	/* remove shared read lock */
 };                                 
 
 

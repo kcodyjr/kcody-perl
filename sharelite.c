@@ -1,5 +1,8 @@
 
 #include <stdlib.h>
+#include <errno.h>
+
+#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -9,8 +12,6 @@
 extern int errno;
 #endif
 
-/* #include <sys/types.h>
-#include <sys/ipc.h> */
 
 #include "sharelite.h"
 #include "sharelite_shm.h"
@@ -180,7 +181,7 @@ int sharelite_lock(Share *share, int flags) {
 		return -1;
 	}
 
-	nonblock = ( ( flags & LOCK_NB ) == LOCK_NB );
+	nonblock = ( flags & LOCK_NB ) == LOCK_NB;
 
 	lockmode = flags & ~ LOCK_NB;
 
