@@ -1,4 +1,4 @@
-package IPC::Shm::Sharelite;
+package IPC::Shm::ShareLite;
 
 use strict;
 use Carp;
