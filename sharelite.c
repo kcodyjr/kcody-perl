@@ -132,8 +132,8 @@ int sharelite_shmdt( Share *share ) {
 
 	if ( share->remove ) {
 		REQ_EX_LOCK(share);
-		_sharelite_shm_remove( share, NULL );
 		_sharelite_sem_remove( share->semid );
+		_sharelite_shm_remove( share, NULL );
 		/* no END_EX_LOCK; we just removed the semaphore */
 	} else {
 		_sharelite_shm_forget( share, NULL );
@@ -181,7 +181,8 @@ int sharelite_lock(Share *share, int flags) {
 	}
 
 	nonblock = ( ( flags & LOCK_NB ) == LOCK_NB );
-	lockmode = ( flags & ( ! LOCK_NB ) );
+
+	lockmode = flags & ~ LOCK_NB;
 
 	/* succeed if we already have the requested lock type */
 	if ( share->lock == lockmode )
@@ -246,6 +247,14 @@ int sharelite_lock(Share *share, int flags) {
 }
 
 
+int sharelite_locked( Share *share, int flags ) {
+
+	CALL_NEEDS_SHARE(-1);
+
+	return share->lock == flags;
+}
+
+
 /* SHARELITE INPUT-OUTPUT FUNCTIONS */
 
 int sharelite_store( Share *share, char *data, int length ) {
@@ -290,14 +299,14 @@ int sharelite_store( Share *share, char *data, int length ) {
 		/* catches other processes freeing shared segments */
 		if ( node->next != NULL ) 
 			if ( node->next->shmid != node->shmhead->next_shmid )
-				if ( _sharelite_forget( share, node ) == -1 ) {
+				if ( _sharelite_shm_forget( share, node ) == -1 ) {
 					END_EX_LOCK(share);
 					return -1;
 				}
 
 		/* catches running into the end of the attached segments */
 		if ( node->next == NULL )
-			if ( _sharelite_append( share ) == -1 ) {
+			if ( _sharelite_shm_append( share ) == -1 ) {
 				END_EX_LOCK(share);
 				return -1;
 			}
@@ -366,13 +375,13 @@ int sharelite_fetch( Share *share, char **data ) {
 
 		if ( node->next != NULL ) 
 			if ( node->next->shmid != node->shmhead->next_shmid )
-				if ( _sharelite_forget( share, node ) == -1 ) {
+				if ( _sharelite_shm_forget( share, node ) == -1 ) {
 					END_SH_LOCK(share);
 					return -1;
 				}
 
 		if ( node->next == NULL )
-			if ( _sharelite_append( share ) == -1 ) {
+			if ( _sharelite_shm_append( share ) == -1 ) {
 				END_SH_LOCK(share);
 				return -1;
 			}

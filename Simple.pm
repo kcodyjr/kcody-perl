@@ -41,14 +41,17 @@ and comparing it stringwise.
 
 
 use Carp;
-use Class::Attrib;
 use Fcntl qw( :flock );
 use IPC::SysV qw( IPC_PRIVATE );
+
+use Class::Attrib;
+use DynaLoader;
+use UNIVERSAL;
 
 use vars qw( $VERSION @ISA %Attrib );
 
 $VERSION = '1.00';
-@ISA     = qw( Class::Attrib );
+@ISA     = qw( Class::Attrib DynaLoader );
 %Attrib  = (
 	Mode		=> 0660,
 	Size		=> 4096,
@@ -237,14 +240,14 @@ sub remove($) {
 	my ( $self ) = @_;
 	my ( $share, $shmid, $ipckey );
 
-	$share  = $self->{__PACKAGE__}->share;
+	$share  = $self->{__PACKAGE__}->{share};
 	$shmid  = sharelite_shmid( $share );
 	$ipckey = sharelite_key( $share );
 
 	delete $ObjCache{$shmid};
 	delete $ObjIndex{$ipckey};
 
-	return sharelite_remove( $share );
+	return sharelite_remove( $share ) != -1;
 }
 
 } # END scope
@@ -317,6 +320,10 @@ sub serial($) {
 	return sharelite_serial( shift->{__PACKAGE__}->{share} );
 }
 
+sub nsegments($) {
+	return sharelite_nsegments( shift->{__PACKAGE__}->{share} );
+}
+
 sub top_seg_size($) {
 	return sharelite_top_seg_size( shift->{__PACKAGE__}->{share} );
 }
@@ -340,8 +347,8 @@ sub fetch($) {
 	my $self = shift;
 	my $obj = $self->{__PACKAGE__};
 
-	carp(  __PACKAGE__ . "->store: Called without at least shared lock!" )
-		unless $self->_locked( LOCK_SH );
+	carp(  __PACKAGE__ . "->fetch: Called without at least shared lock!" )
+		if $self->_locked( LOCK_UN );
 
 	# determine current shared memory value serial number
 	my $serial = sharelite_serial( $obj->{share} );
@@ -372,7 +379,7 @@ sub fetch($) {
 			unless defined $data;
 
 		# only bother with strcmp if a subclass cares about changes
-		if ( my $cref = can( $self, '_fresh' ) ) {
+		if ( my $cref = UNIVERSAL::can( $self, '_fresh' ) ) {
 			my $changed = defined $obj->{scache}
 					? $data eq $obj->{scache}
 					: 1;
@@ -402,7 +409,7 @@ sub store($$) {
 	carp(  __PACKAGE__ . "->store: Called without exclusive lock!" )
 		unless $self->_locked( LOCK_EX );
 
-	my $rc = sharelite_store( $obj->{share}, $_[0] );
+	my $rc = sharelite_store( $obj->{share}, $_[0], CORE::length( $_[0] ) );
 
 	croak( __PACKAGE__ . "->store: failed: $!" )
 		if $rc == -1;
@@ -423,7 +430,8 @@ sub store($$) {
 	$obj->{sstamp} = time();
 	$obj->{serial} = sharelite_serial( $obj->{share} );
 
-	return;
+	# return true so test harnesses pass
+	return 1;
 }
 
 
@@ -465,6 +473,8 @@ sub _locked($$) {
 	return $rc != 0;
 }
 
+
+bootstrap IPC::Shm::Simple $VERSION;
 
 1;
 

@@ -16,6 +16,8 @@
 #ifndef __SHARELITE_SEM_H__
 #define __SHARELITE_SEM_H__
 
+#include <stdlib.h>
+#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <errno.h>
@@ -105,9 +107,9 @@ inline
 int _sharelite_sem_create( int flags ) {
 	int semid;
 
-	flags = flags | IPC_CREAT | IPC_EXCL;
+	semid = semget( IPC_PRIVATE, 2, flags | IPC_CREAT | IPC_EXCL);
 
-	if ( semid = semget( IPC_PRIVATE, 2, flags ) == -1 )
+	if ( semid == -1 )
 		return -1;
 
 	if ( semop( semid, &ex_lock[0], 3 ) == -1 ) {

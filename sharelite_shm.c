@@ -244,7 +244,8 @@ int _sharelite_shm_remove( Share *share, Node *last ) {
 
 	_SHMSEG_TRUNC_SETUP_MACRO_
 
-	last->shmhead->next_shmid = -1;
+	if ( last != NULL )
+		last->shmhead->next_shmid = -1;
 
 	while ( node != NULL ) {
 		next = node->next;

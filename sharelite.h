@@ -116,6 +116,8 @@ int	 sharelite_store(Share *share, char *data, int length);
 /* fetch back a block of raw binary data */
 int	 sharelite_fetch(Share *share, char **data);
 
+/* report the ipckey of the top segment */
+int      sharelite_key(Share *share);
 /* report the shmid of the top segment */
 int      sharelite_shmid(Share *share);
 /* report the total bytes currently stored */
