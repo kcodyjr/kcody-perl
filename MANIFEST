@@ -1,9 +1,12 @@
 MANIFEST
 MANIFEST.SKIP
+README
 README.sharelite
 Makefile.PL
 Simple.pm
 Simple.xs
+ShareLite.pm
+ShareLite.xs
 sharelite.h
 sharelite.c
 sharelite_sem.h
