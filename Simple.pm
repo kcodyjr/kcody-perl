@@ -160,8 +160,8 @@ sub create($;$) {
 	my ( $share, $class, $self );
 
 	$ipckey ||= IPC_PRIVATE;
-	$size   ||= $self->Size();
-	$mode   ||= $self->Mode();
+	$size   ||= $this->Size();
+	$mode   ||= $this->Mode();
 
 	$class = ref( $this ) || $this;
 
