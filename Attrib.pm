@@ -60,8 +60,7 @@ $VERSION = "1.01";
 =head2 Explanation:
 
 Attribute definitions are kept in hashes named 'Attrib' in the derived
-classes.  The details of the attribute definitions determine the behavior
-of the accessor methods.
+class package.
 
 ClassAttrib (a class attribute) only has useful meaning during instantiation
 of an object, therefore instance data is ignored entirely during accessor calls.
