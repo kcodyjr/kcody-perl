@@ -21,6 +21,8 @@
 
 /* --- SHARED SEGMENT LIST FUNCTIONS --- */
 
+/* TODO: document which share-> fields are read as arguments */
+
 /* attach to an existing key or shmid and init its    */
 int _sharelite_shm_attach( Share *share );
 

@@ -33,8 +33,9 @@ Node *_shmseg_shmat( int shmid ) {
 		return NULL;
 
 	if ( ( node = malloc( sizeof( Node ) ) ) == NULL ) {
+		shmid = errno;
 		shmdt( shmaddr );
-		errno = ENOMEM; /* is this the right thing to do? */
+		errno = shmid; /* does malloc define this? */
 		return NULL;
 	}
 
@@ -73,6 +74,7 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 	Node *node;
 	int myflags, shmid;
 
+	flags   = flags & 0x01FF; /* only want lower nine bits - perms */
 	myflags = flags | IPC_CREAT | IPC_EXCL;
 
 	if ( ( shmid = shmget( key, size, myflags ) ) == -1 )
@@ -102,8 +104,7 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 		node->shminfo->data_serial   = 0;
 		node->shminfo->data_length   = 0;
 
-	} else 
-		node->shminfo->data_chunks++;
+	}
 
 	return node;
 }
@@ -201,6 +202,7 @@ int _sharelite_shm_append( Share *share ) {
 	}
 
 	node->shminfo = share->head->shminfo;
+	node->shminfo->data_chunks++;
 
 	return 0;
 }
