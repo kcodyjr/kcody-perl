@@ -10,8 +10,6 @@
  * of either the Artistic or GNU General Public licenses, at
  * the modifier or redistributor's discretion.
  *
- * TODO: Add segment usage tracking.
- *
  */
 
 #include <stdlib.h>
@@ -53,8 +51,14 @@ Node *_shmseg_shmat( int shmid ) {
 /* shmdt from a segment and free its Node structure, possibly remove segment */
 int _shmseg_shmdt( Node *node, int remove ) {
 
-	if ( shmctl( node->shmid, IPC_RMID, NULL ) == -1 )
-		return -1;
+	if ( remove ) {
+
+		node->shminfo->data_chunks--;
+
+		if ( shmctl( node->shmid, IPC_RMID, NULL ) == -1 )
+			return -1;
+
+	}
 
 	if ( shmdt( node->shmhead ) == -1 )
 		return -1;
@@ -94,10 +98,12 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 		node->shminfo->size_chunkseg = size;
 
 		node->shminfo->seg_semid     = -1;
+		node->shminfo->data_chunks   = 0;
 		node->shminfo->data_serial   = 0;
 		node->shminfo->data_length   = 0;
 
-	}
+	} else 
+		node->shminfo->data_chunks++;
 
 	return node;
 }

@@ -20,7 +20,8 @@
  * same size.  Maximum size is system-dependent (SHMMAX).   *
  * CHANGED 2/2005 by K Cody <kcody@jilcraft.com>            *
  * seems this should probably track system page size        *
- * also, now chunk segments can be of different size        */
+ * also, now chunk segments can be of different size        *
+ * SEG_SIZE is the default, applies when size < MIN_SIZE    */
 #define SHARELITE_SEG_SIZE 4096
 #define SHARELITE_MIN_SIZE  256
 
@@ -52,6 +53,7 @@ typedef struct {
   int		 seg_perms;    /* segment creation flags     */
   int		 data_serial;  /* incremented on write       */
   unsigned int	 data_length;  /* total data in all chunks   */
+  unsigned int	 data_chunks;  /* number of chunk segments   */
   unsigned int	 size_topseg;  /* total size of main segment */
   unsigned int	 size_chunkseg;/* total size of appended seg */
 } Descriptor;

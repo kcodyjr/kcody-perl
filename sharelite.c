@@ -453,35 +453,10 @@ int sharelite_segsize( Share *share, int segsize ) {
 }
 
 int sharelite_nsegments( Share *share ) {
-	Node *node;
-	int count;
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
-	REQ_SH_LOCK(share);
-
-	count = 0;
-	node  = share->head;
-
-	while ( node != NULL ) {
-		count++;
-
-		if ( node->shmhead->next_shmid != -1 ) {
-
-			if ( node->next == NULL )
-				if ( _sharelite_append( share ) == -1 )
-					return -1;
-
-			node = node->next;
-
-		} else
-			node = NULL;
-
-	}
-
-	END_SH_LOCK(share);
-
-	return count;
+	return share->head->shminfo->data_chunks + 1;
 }
 
 
