@@ -422,6 +422,21 @@ int sharelite_shmid( Share *share ) {
 	return share->shmid;
 }
 
+int sharelite_flags( Share *share ) {
+
+	CALL_NEEDS_SHARE(-1);
+
+	return share->flags;
+}
+
+int sharelite_valid( Share *share ) {
+
+
+	CALL_NEEDS_SHARE(-1);
+
+	return semctl( share->semid, 0, GETPID ) > 0;
+}
+
 int sharelite_length( Share *share ) {
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
@@ -436,7 +451,21 @@ int sharelite_serial( Share *share ) {
 	return share->head->shminfo->data_serial;
 }
 
-int sharelite_segsize( Share *share, int segsize ) {
+int sharelite_nsegments( Share *share ) {
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	return share->head->shminfo->data_chunks + 1;
+}
+
+int sharelite_top_seg_size( Share *share ) {
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	return share->head->shminfo->size_topseg;
+}
+
+int sharelite_chunk_seg_size( Share *share, int segsize ) {
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
@@ -461,11 +490,5 @@ int sharelite_segsize( Share *share, int segsize ) {
 	return share->head->shminfo->size_chunkseg;
 }
 
-int sharelite_nsegments( Share *share ) {
-
-	CALL_NEEDS_SHARE_AND_HEAD(-1);
-
-	return share->head->shminfo->data_chunks + 1;
-}
 
 

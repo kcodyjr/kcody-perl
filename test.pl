@@ -4,7 +4,7 @@
 use warnings;
 use strict;
 
-use Test::More tests => 17;
+use Test::More tests => 27;
 
 use Fcntl qw( :flock );
 use IPC::Shm::Simple;
@@ -12,52 +12,78 @@ use IPC::Shm::Simple;
 use vars qw( $KEY $pid $val );
 
 # If a semaphore or shared memory segment already uses this
-# key, all tests will fail
+# key, the first set of tests will fail, and the script will die()
 $KEY = 192; 
 
 my ( $share, $result );
 
 # Test object construction
-ok( $share = IPC::Shm::Simple->create($KEY, 256, 0660), 'create( $KEY )' );
+ok( $share = IPC::Shm::Simple->create($KEY, 256, 0660), 'create key=192' );
+
+# continue testing only if we actually have a segment
+die $! unless $share;
+
+# check that the size took
+is( $share->top_seg_size, 256, '... check its segment size' );
+
+# check that the mode took
+is( $share->flags, 0660, '... check its segment mode' );
+
+# check that it is indeed blank
+is( $share->length, 0, '... check zero data length' );
+is( $share->length, 0, '... check zero data serial' );
+
+# detach from it
+undef $share;
+ok( 1, '... detach from it' );
+
+# try to reattach to it
+$share = IPC::Shm::Simple->attach($KEY);
+ok( defined $share, '... try to reattach, expect success' );
 
 # remove it
-ok( $share ? $share->remove() : 1, 'remove()' );
+ok( $share->remove(), '... remove it from the system' );
+
+# try to reattach to it
+undef $share;
+$share = IPC::Shm::Simple->attach($KEY);
+is( $share, undef, '... try to reattach, expect failure' );
 
 # create a new anony
-ok( $share = IPC::Shm::Simple->create(), 'create()' );
+ok( $share = IPC::Shm::Simple->create(), 'create unkeyed shmseg' );
 
 # continue testing only if we actually have a segment
 die $! unless $share;
 
 # Store value
-ok( $share->store('maurice'), 'store( "maurice" )' );
+ok( $share->store('maurice'), 'store short string value' );
 
 # Retrieve value
-is( $share->fetch, 'maurice', 'fetch()' );
+is( $share->fetch, 'maurice', '... fetch and compare' );
 
 # Fragmented store
-ok( $share->store( "X" x 10000 ), 'store( "X" x 10000 )');
-
-# Check number of segments
-is( $share->nsegments, 3, 'nsegments == 3' );
+ok( $share->store( "X" x 10000 ), 'store long (chunked) string value');
 
 # check actual size
-is( $share->length, 10000, 'length == 10000' );
+is( $share->length, 10000, '... check data length' );
+
+# Retrieve value
+is( $share->fetch, 'X' x 10000, '... fetch and compare' );
+
+# Check number of segments
+is( $share->nsegments, 3, '... check number of segments' );
 
 # check serial number
-is( $share->serial, 2, 'serial == 2' );
-
-# Fragmented fetch
-is( $share->fetch, 'X' x 10000, 'fetch()' );
+is( $share->serial, 2, '... check serial number' );
 
 # set back to a zero value
-ok( $share->store( 0 ), 'store( 0 )' );
+ok( $share->store( 0 ), 'store zero numeric value' );
 
 # verify we're back to one segment
-is( $share->nsegments, 1, 'nsegments == 1' );
+is( $share->nsegments, 1, '... check number of segments' );
 
 # unlock the segment prior to fork
-ok( $share->lock(LOCK_UN), 'lock( LOCK_UN )' );
+ok( $share->lock(LOCK_UN), 'release exclusive lock left by create()' );
 
 defined( $pid = fork ) or die $!;
 
@@ -71,7 +97,7 @@ if ($pid == 0) {
   }
   exit;
 } else {
-  ok( defined $pid, 'fork()' );
+  ok( defined $pid, 'forked to cause lock contention' );
   for(1..1000) {
     $share->lock( LOCK_EX ) or die $!;
     $val = $share->fetch;
@@ -79,16 +105,19 @@ if ($pid == 0) {
     $share->lock( LOCK_UN ) or die $!;
   } 
   wait;
+  ok( 1, '... child process completed' );
 
   $share->lock( LOCK_EX );
-  is( $share->fetch, 2000, 'fetch() == 2000' );
+  is( $share->fetch, 2000, '... check stored value' );
+  is( $share->serial, 2003, '... check serial number' );
+  is( $share->length, 4, '... check data length' );
   $share->lock( LOCK_UN );
 }
 
 # mark share for deletion
-ok( $share->remove(), 'remove()' );
+ok( $share->remove(), 'clean up the segment' );
 
 # cause undefine - test returns true to prove the script is still running
 undef $share;
-ok( 1, 'undef' );
+ok( 1, '... undefine to trigger destructor' );
 

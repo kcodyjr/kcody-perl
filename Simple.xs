@@ -120,6 +120,14 @@ sharelite_shmid(share)
 	Share*		share
 
 int
+sharelite_flags(share)
+	Share*		share
+
+int
+sharelite_valid(share)
+	Share*		share
+
+int
 sharelite_length(share)
 	Share*		share
 
@@ -128,11 +136,15 @@ sharelite_serial(share)
 	Share*		share
 
 int
-sharelite_segsize(share,size)
-	Share*		share
-	int		size
-
-int
 sharelite_nsegments(share)
 	Share*		share
+
+int
+sharelite_top_seg_size(share)
+	Share*		share
+
+int
+sharelite_chunk_seg_size(share,size)
+	Share*		share
+	int		size
 

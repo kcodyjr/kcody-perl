@@ -312,6 +312,10 @@ sub flags($) {
 	return sharelite_flags( shift->{__PACKAGE__}->{share} );
 }
 
+sub valid($) {
+	return sharelite_valid( shift->{__PACKAGE__}->{share} );
+}
+
 sub length($) {
 	return sharelite_length( shift->{__PACKAGE__}->{share} );
 }

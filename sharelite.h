@@ -118,15 +118,21 @@ int	 sharelite_fetch(Share *share, char **data);
 
 /* report the ipckey of the top segment */
 int      sharelite_key(Share *share);
+/* report the mode flags used at creation */
+int      sharelite_flags(Share *share);
+/* report that the segment is still valid (not removed) */
+int      sharelite_valid(Share *share);
 /* report the shmid of the top segment */
 int      sharelite_shmid(Share *share);
 /* report the total bytes currently stored */
 int	 sharelite_length(Share *share);
 /* report the serial number stored in the top segment Descriptor */
 int	 sharelite_serial(Share *share);
-/* report or set the size of any subsequent chunk segments */
-int	 sharelite_segsize(Share *share, int size);
 /* report the number of operating system segments in use */
 int	 sharelite_nsegments(Share *share);
+/* report or set the size of any subsequent chunk segments */
+int	 sharelite_top_seg_size(Share *share);
+/* report or set the size of any subsequent chunk segments */
+int	 sharelite_chunk_seg_size(Share *share, int size);
 
 #endif /* define __SHARELITE_H__ */
