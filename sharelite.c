@@ -130,14 +130,13 @@ int sharelite_shmdt( Share *share ) {
 
 	CALL_NEEDS_SHARE(-1);
 
-	REQ_EX_LOCK(share);
-
 	if ( share->remove ) {
+		REQ_EX_LOCK(share);
 		_sharelite_shm_remove( share, NULL );
 		_sharelite_sem_remove( share->semid );
+		/* no END_EX_LOCK; we just removed the semaphore */
 	} else {
 		_sharelite_shm_forget( share, NULL );
-		REL_EX_LOCK(share);
 	}
 
 	free( share );
@@ -352,14 +351,16 @@ int sharelite_fetch( Share *share, char **data ) {
 	chunk   = node->shminfo->size_chunkseg - sizeof( Header );
 	srcaddr = node->shmdata;
 
-	if ( length <= size ) {
+	if ( length < size ) {
 		size = length;
 		left = 0;
 	} else
 		left = length - size;
 
-	if ( memcpy( dstaddr, srcaddr, size ) == NULL )
-			return -1;
+	if ( memcpy( dstaddr, srcaddr, size ) == NULL ) {
+		END_SH_LOCK(share);
+		return -1;
+	}
 
 	while ( left ) {
 
@@ -433,11 +434,19 @@ int sharelite_segsize( Share *share, int segsize ) {
 	if ( segsize > 0 ) {
 		/* trying to set a new segment size */
 
-		if ( share->head->shminfo->data_length > share->size_data )
+		REQ_EX_LOCK(share);
+
+		if ( share->head->shminfo->data_length > share->size_data ) {
 			/* there are chunk segments defined already */
+			END_EX_LOCK(share);
+			errno = EINVAL;
 			return -1;
+		}
 
 		share->head->shminfo->size_chunkseg = segsize;
+
+		END_EX_LOCK(share);
+
 	}
 
 	return share->head->shminfo->size_chunkseg;
@@ -448,6 +457,8 @@ int sharelite_nsegments( Share *share ) {
 	int count;
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	REQ_SH_LOCK(share);
 
 	count = 0;
 	node  = share->head;
@@ -467,6 +478,8 @@ int sharelite_nsegments( Share *share ) {
 			node = NULL;
 
 	}
+
+	END_SH_LOCK(share);
 
 	return count;
 }
