@@ -170,7 +170,7 @@ sub otherpkg($$) {
 	return walk {
 		my $pkg = shift;
 		no strict 'refs';
-		*{$pkg.'::'.$name}{CODE} ? $pkg : undef;
+		( *{$pkg.'::'.$name}{CODE} ) ? $pkg : undef;
 	} $origin, $caller;
 }
 
