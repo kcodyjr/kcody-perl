@@ -1,0 +1,13 @@
+Makefile.PL
+DDNS.pm
+DDNS/API.pm
+DDNS/DHCID.pm
+DDNS/DHCID/interim.pm
+DDNS/DHCID/rfc4701.pm
+DDNS/Lookup.pm
+DDNS/TSIG.pm
+DDNS/Update.pm
+MANIFEST
+AUTHORS
+COPYING
+LGPL-2.1
