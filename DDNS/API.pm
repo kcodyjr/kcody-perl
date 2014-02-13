@@ -2,6 +2,7 @@ package Net::DHCP::DDNS::API;
 use warnings;
 use strict;
 
+use Class::Attrib 1.02;
 use base 'Class::Attrib';
 
 use Carp;
