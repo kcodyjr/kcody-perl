@@ -29,12 +29,13 @@ use strict;
 use warnings;
 
 use Storable qw( &dclone );
+use Class::Multi 1.01;
 use Class::Multi qw( &walk &other &otherpkg );
 use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.02";
+$VERSION = "1.03";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -170,30 +171,47 @@ is 'undef', removes any previously stored instance-specific value.
 
 =cut
 
+{ # private lexicals begin
+
+my %values;
+
 sub attrib($;$;$) {
 	my $self = shift;
 
 	# class reference, might want to test or change a default
 	return $self->Attrib( @_ ) unless ref $self;
 
+	my $index = "$self";
+
 	# never return a reference to the real data ;)
-	return dclone( $self->{__PACKAGE__} ) unless @_;
+	return dclone( $values{$index} ) unless @_;
 
 	my ( $key, $value ) = @_;
 
 	if ( @_ > 1 ) {
 		if ( defined $value ) {
-			$self->{__PACKAGE__}->{$key} = $value;
+			$values{$index}->{$key} = $value;
 		} else {
-			delete $self->{__PACKAGE__}->{$key};
+			delete $values{$index}->{$key};
+			delete $values{$index}
+				unless scalar( %{$values{$index}} );
 		}
 	}
 
-	return exists $self->{__PACKAGE__}->{$key}
-		? $self->{__PACKAGE__}->{$key}
+	return exists $values{$index}->{$key}
+		? $values{$index}->{$key}
 		: $self->Attrib( $key );
 }
 
+sub DESTROY {
+	my $self = shift;
+
+	my $index = "$self";
+	delete $values{$index};
+
+}
+
+} # private lexicals end
 
 =head1 ATTRIBUTE NAMED ACCESSOR METHODS
 
