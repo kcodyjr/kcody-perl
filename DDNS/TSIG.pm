@@ -34,8 +34,8 @@ sub get {
 		return undef;
 	}
 
-	my $ktext = <$fh>
-		or return undef;
+	my $ktext = <$fh>;
+	return undef unless defined $ktext;
 
 	$fh->close;
 
