@@ -34,7 +34,7 @@ use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.01";
+$VERSION = "1.02";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -221,6 +221,9 @@ sub AUTOLOAD {
 	# strip off the "fully qualified" part of the method name
 	$name =~ s/.*://;
 
+	# bail immediately if it's looking for a destructor
+	return if $name eq 'DESTROY';
+
 	# check to see if the requested attribute exists
 	my $class = walk {	
 			my $pkg = shift;
@@ -238,8 +241,9 @@ sub AUTOLOAD {
 	unless ( defined $class ) {
 
 		unless ( $class = otherpkg( $this, 'AUTOLOAD' ) ) {
+			my $t = $AUTOLOAD; $t =~ s/::[^:]*$//;
 			confess( __PACKAGE__ . "->AUTOLOAD: ",
-				"No attribute '$name' found via '$AUTOLOAD'." )
+				"No attribute '$name' found via '$t'" )
 		}
 
 		{ # scope no strict refs
