@@ -7,19 +7,45 @@ use strict;
 ###############################################################################
 #
 
+use Carp;
 use IO::File;
 
-sub new {
-	my ( $class, $file ) = @_;
+
+###############################################################################
+#
+
+sub get {
+	my ( $class, %args ) = @_;
 
 	$class = ref( $class ) if ref( $class );
 
-	bless my $self = { file => $file }, $class;
+	unless ( $class->isa( __PACKAGE__ ) ) {
+		confess __PACKAGE__ . "::get($class) is asinine";
+	}
 
-	$self->reread;
+	my $file = $args{file};
+	my $name = $args{name};
+
+	bless my $self = { %args }, $class;
+
+	$self->{wholefile} = $self->reread
+		or return undef;
+
+	$self->{clientids} = $self->{wholefile}->{$name}
+		or return undef;
 
 	return $self;
 }
+
+sub clientids {
+	my ( $self ) = @_;
+
+	return wantarray ? %{$self->{clientids}} : $self->{clientids};
+}
+
+
+###############################################################################
+#
 
 sub process {
 	my $in = shift;
@@ -41,7 +67,7 @@ sub reread {
 	my @in;
 
 	my $fh = IO::File->new;
-	$fh->open( "< /var/lib/dhcp/dhcpd.leases" );
+	$fh->open( '< ' .$self->{file} );
 	while ( <$fh> ) { push @in, $_; }
 	$fh->close;
 
@@ -108,14 +134,7 @@ sub reread {
 		$NAMES{$lease->{name}} = $lease;
 	}
 
-	$self->{names} = \%NAMES;
-
-}
-
-sub client {
-	my ( $self, $name ) = @_;
-
-	return $self->{names}->{$name} || {};
+	return \%NAMES;
 }
 
 

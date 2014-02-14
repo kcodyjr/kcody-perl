@@ -9,6 +9,7 @@ use strict;
 use base qw( Class::Attrib Net::DHCP::DDNS );
 
 use Net::OpenVPN::DDNS::Env;
+use Net::OpenVPN::DDNS::Lease;
 use Net::IP;
 
 our $VERSION = 0.1;
@@ -33,6 +34,9 @@ our %Attrib = (
 
 		ddnsdomainname	=> undef,
 		peer_full_name	=> undef,
+
+		iscdhcpdleases	=> undef,
+		localclientdir	=> undef,
 
 		dhcid_rrtype	=> 'rfc4701',
 		foreign_fqdn	=> 'ignore'
@@ -204,12 +208,50 @@ sub run_rem {
 ###############################################################################
 # detail generators
 
+sub get_clientid {
+	my $ctx = shift;
+	my %rv;
+
+	my $name = $ctx->peer_name;
+
+	if ( my $file = $ctx->iscdhcpdleases ) {
+
+		my $obj = Net::OpenVPN::DDNS::Lease->get( $file, $name );
+
+		if ( $obj ) {
+			foreach my $type ( keys $obj->clientids ) {
+				$rv{$type} = $obj->clientids->{$type};
+			};
+		}
+
+	}
+
+	if ( my $path = $ctx->localclientdir ) {
+
+		my $obj = Net::OpenVPN::DDNS::Local->get( $path, $name );
+
+		if ( $obj ) {
+			foreach my $type ( keys $obj->clientids ) {
+				$rv{$type} = $obj->clientids->{$type};
+			};
+		}
+
+	}
+
+	return %rv;
+}
+
 sub get_dhcid {
 	my $ctx = shift;
 
-	# FIXME: implement!
+	my %args = $ctx->get_clientids;
 
-	return undef;
+	# FIXME: implement local file lookup
+
+	$args{fqdn}  = $ctx->peer_full_name;
+	$args{style} = $ctx->dhcid_rrtype;
+
+	return Net::DHCP::DDNS::DHCID->new ( %args );
 }
 
 sub get_peer_full_name {
