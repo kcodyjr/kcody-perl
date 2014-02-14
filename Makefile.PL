@@ -13,4 +13,7 @@ WriteMakefile(
         COMPRESS => 'gzip', SUFFIX => 'gz',
     },
     'INSTALLSCRIPT' => '/etc/openvpn/ddns',
+    'INSTALLSITESCRIPT' => '/etc/openvpn/ddns',
+    'INSTALLVENDORSCRIPT' => '/etc/openvpn/ddns',
+    'EXE_FILES'     => [ 'update' ],
 );

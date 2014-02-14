@@ -1,4 +1,5 @@
 Makefile.PL
+update
 DDNS.pm
 DDNS/Env.pm
 DDNS/Lease.pm
