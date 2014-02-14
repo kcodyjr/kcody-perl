@@ -18,7 +18,13 @@ use strict;
 sub internalize {
 	my $ctx = shift;
 
-	$ctx->peer_name( $ENV{common_name} );
+	unless ( $ctx->peer_name( $ENV{common_name} ) ) {
+		return 0;
+	}
+
+	unless ( $ctx->script_type( $ENV{script_type} ) ) {
+		return 0;
+	}
 
 	$ctx->own_ipv4_addr( $ENV{ifconfig_local} );
 	$ctx->own_ipv6_addr( $ENV{ifconfig_ipv6_local} );
@@ -27,8 +33,6 @@ sub internalize {
 	$ctx->its_ipv4_addr( $ENV{ifconfig_pool_remote_ip} );
 	$ctx->its_ipv6_addr( $ENV{ifconfig_ipv6_pool_remote_ip6} );
 	$ctx->its_peer_addr( $ENV{ifconfig_pool_local_ip} );
-
-	$ctx->script_type( $ENV{script_type} );
 
 	$ctx->dynamic_ccd( shift @ARGV )
 		if $ctx->script_type eq 'client-connect';

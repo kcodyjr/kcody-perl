@@ -58,9 +58,11 @@ sub configure {
 sub scriptrun {
 	my $ctx = shift;
 
-	Net::OpenVPN::DDNS::Env::internalize( $ctx );
+	Net::OpenVPN::DDNS::Env::internalize( $ctx )
+		or die "Could not import OpenVPN environment.\n";
 
-	my $mode = $ctx->script_type;
+	my $mode = $ctx->script_type
+		or die "Could not determine OpenVPN script type.\n";
 
 	if ( $mode eq 'client-connect' ) {
 		$ctx->initialize;
@@ -207,7 +209,7 @@ sub get_dhcid {
 
 	# FIXME: implement!
 
-	return $dhcid;
+	return undef;
 }
 
 sub get_peer_full_name {
