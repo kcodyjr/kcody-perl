@@ -10,6 +10,7 @@ use base qw( Class::Attrib Net::DHCP::DDNS );
 
 use Net::OpenVPN::DDNS::Env;
 use Net::OpenVPN::DDNS::Lease;
+use Net::OpenVPN::DDNS::Local;
 use Net::IP;
 
 our $VERSION = 0.1;
@@ -245,8 +246,6 @@ sub get_dhcid {
 	my $ctx = shift;
 
 	my %args = $ctx->get_clientids;
-
-	# FIXME: implement local file lookup
 
 	$args{fqdn}  = $ctx->peer_full_name;
 	$args{style} = $ctx->dhcid_rrtype;

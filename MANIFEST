@@ -3,6 +3,7 @@ update
 DDNS.pm
 DDNS/Env.pm
 DDNS/Lease.pm
+DDNS/Local.pm
 MANIFEST
 AUTHORS
 COPYING
