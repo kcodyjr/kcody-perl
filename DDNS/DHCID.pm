@@ -6,7 +6,7 @@ use Carp;
 use MIME::Base64;
 
 use Net::DHCP::DDNS::DHCID::rfc4701;
-use Net::DHCP::DDNS::DHCID::interim;
+use Net::DHCP::DDNS::DHCID::iscdhcp;
 
 
 sub new {
@@ -25,8 +25,8 @@ sub new {
 		$class = 'Net::DHCP::DDNS::DHCID::rfc4701';
 	}
 
-	elsif ( $t eq 'interim' ) {
-		$class = 'Net::DHCP::DDNS::DHCID::interim';
+	elsif ( $t eq 'iscdhcp' ) {
+		$class = 'Net::DHCP::DDNS::DHCID::iscdhcp';
 	}
 
 	else {

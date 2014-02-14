@@ -1,4 +1,4 @@
-package Net::DHCP::DDNS::DHCID::interim;
+package Net::DHCP::DDNS::DHCID::iscdhcp;
 use warnings;
 use strict;
 
