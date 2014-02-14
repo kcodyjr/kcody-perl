@@ -1,0 +1,8 @@
+Makefile.PL
+DDNS.pm
+DDNS/Env.pm
+DDNS/Lease.pm
+MANIFEST
+AUTHORS
+COPYING
+LGPL-2.1
