@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+#
+# Script wrapper for Net::OpenVPN::DDNS
+#
+# Global configuration is contained here.
+#
+###############################################################################
+#
+# 12-FEB-2014: Kevin Cody-Little <kcody@cpan.org>
+# 	Moved bulk of code to Net::OpenVPN::DDNS
+#
+# 01-FEB-2014: Kevin Cody-Little <kcody@cpan.org>
+# 	Initial version.
+#
+###############################################################################
+# global configuration
+
+my %CONFIG = (
+
+	# keys are installed to this directory, one per domain, 
+	# in a file named equal to the reversed domain name.
+	# they can be the Kfoobar.num.num.key files directly
+	# output by dnssec-keygen, or they can be keyname = value.
+	# absent this value, the library will look in /etc/ddns/keys.
+	ddns_key_root		=>	'/etc/openvpn/ddns/keys',
+
+	# selects for compatibility with rfc4701 or with ISC dhcpd.
+	# note this can also be controlled per-instance, see setup docs.
+	dhcid_rrtype		=>	'iscdhcp',	# rfc4701, iscdhcp
+
+	# selects whether the domain part of a client name is dropped (ignore),
+	# whether it's used in the reverse dns records (allow), or whether the
+	# connection will be dropped for an out-of-domain client fqdn (deny).
+	# note this can also be controlled per-instance, see setup docs.
+	foreign_fqdn		=>	'ignore',	# ignore, allow, deny
+
+	# selects whether to enforce every rule and fail where otherwise
+	# success could have been achieved, or loosen up and get the job
+	# done even in the presence of other noncompliant software.
+	# note this can also be controlled per-instance, see setup docs.
+	strict_rfc4703		=>	0
+
+);
+
+
+###############################################################################
+# redirect stderr to syslog
+
+{ # private lexicals begin
+	no strict 'vars';
+	open STDERR, '| logger -t openvpn-ddns';
+} # private lexicals end
+
+
+###############################################################################
+# MAIN CODE BLOCK
+
+use Net::OpenVPN::DDNS;
+
+my $DDNS = Net::OpenVPN::DDNS->new
+	or die "Could not load Net::OpenVPN::DDNS: $!\n";
+
+# FIXME this should be on the class but there's a bug in Class::Attrib::Attrib
+$DDNS->configure( \%CONFIG );
+
+my $rval = $DDNS->scriptrun; # FIXME or whine
+
+exit( $rval ? 0 : 1 );
+
