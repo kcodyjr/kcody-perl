@@ -68,7 +68,7 @@ sub reread {
 
 	my $fh = IO::File->new;
 	$fh->open( '< ' .$self->{file} );
-	while ( <$fh> ) { push @in, $_; }
+	while ( <$fh> ) { chomp $_; push @in, $_; }
 	$fh->close;
 
 	my %LEASES;

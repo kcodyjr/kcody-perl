@@ -37,6 +37,7 @@ sub get {
 
 	my %clientids;
 	while ( my $txt = <$fh> ) {
+		chomp( $txt );
 
 		my ( $type, $value ) = split /\s*=\s*/, $txt, 2
 			or next;
