@@ -88,6 +88,10 @@ sub import_hwid { # assumed ethernet
 
 	if ( $hwid =~ /:/ ) {
 
+		$hwid =~ s/^['"]//;
+		$hwid =~ s/['"]$//;
+		chomp( $hwid );
+
 		$rv = chr( 0x01 );
 
 		grep {
