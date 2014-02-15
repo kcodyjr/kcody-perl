@@ -245,43 +245,7 @@ sub getattrbyname {
 		next unless $rr->type eq 'TXT';
 		my $t = $rr->txtdata;
 
-		$t =~ s/\\\\/\\/g;
-		$t =~ s/\\"/"/g;
-
-		next unless $t =~ /[^`]=/;
-		next if $t =~ /^=/;
-
-		my ( $key, $value, $have_key );
-		foreach my $p ( split /=/, $t ) {
-
-			if ( $have_key ) {
-				$value .= '=' if $value;
-				$value .= $p;
-				next;
-			}
-
-			if ( $p =~ /`$/ ) {
-				$p =~ s/`$//;
-				$key .= '=' if $key;
-				$key .= $p;
-				next;
-			}
-
-			$key .= '=' if $key;
-			$key .= $p;
-
-			$have_key = 1;
-
-		}
-
-		$key = lc( $key );
-		$key =~ s/^\s+//;
-		$key =~ s/\s+$//;
-		$key =~ s/``/`/g;
-		$key =~ s/`=/=/g;
-		$key =~ s/` / /g;
-		$key =~ s/`	/	/g;
-		$key = lc( $key );
+		my ( $key, $value ) = $self->parse_attribute( $t );
 
 		if ( $key eq $attrname ) {
 			push @rv, $value;
@@ -290,6 +254,50 @@ sub getattrbyname {
 	}
 
 	return @rv;
+}
+
+sub parseattribute {
+	my ( $self, $t ) = @_;
+	my ( $key, $value, $have_key );
+
+	$t =~ s/\\\\/\\/g;
+	$t =~ s/\\"/"/g;
+
+	next unless $t =~ /[^`]=/;
+	next if $t =~ /^=/;
+
+	foreach my $p ( split /=/, $t ) {
+
+		if ( $have_key ) {
+			$value .= '=' if $value;
+			$value .= $p;
+			next;
+		}
+
+		if ( $p =~ /`$/ ) {
+			$p =~ s/`$//;
+			$key .= '=' if $key;
+			$key .= $p;
+			next;
+		}
+
+		$key .= '=' if $key;
+		$key .= $p;
+
+		$have_key = 1;
+
+	}
+
+	$key = lc( $key );
+	$key =~ s/^\s+//;
+	$key =~ s/\s+$//;
+	$key =~ s/``/`/g;
+	$key =~ s/`=/=/g;
+	$key =~ s/` / /g;
+	$key =~ s/`	/	/g;
+	$key = lc( $key );
+
+	return ( $key, $value );
 }
 
 
