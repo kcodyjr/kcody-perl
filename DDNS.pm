@@ -115,15 +115,39 @@ sub revlookup($) {		# arg: reverse domain name
 sub initialize {
 	my $ctx = shift;
 
-	$ctx->ddnsdomainname( $ctx->get_ddnsdomainname )
-		or return undef;
+	$ctx->getattributes;
+
+#	$ctx->ddnsdomainname( $ctx->get_ddnsdomainname )
+#		or return undef;
 
 	$ctx->peer_full_name( $ctx->get_peer_full_name )
 		or return undef;
 
 	$ctx->dhcid( $ctx->get_dhcid );
-# FIXME: fetch other per-instance configs here
+
 	return $ctx;
+}
+
+sub getattributes {
+	my $ctx = shift;
+	my $num = 0;
+
+	my $d = revdomain( $ctx->own_ipv4_addr || $ctx->own_ipv6_addr )
+		or return undef;
+
+	my $r = Net::DHCP::DDNS::Lookup->send( $d, 'TXT' )
+		or return undef;
+
+	foreach my $rr ( $r->answer ) {
+		next unless $rr->type eq 'TXT';
+		my $t = $rr->txtdata;
+		my ( $k, $v ) = Net::DHCP::DDNS::Lookup->parseattribute( $t )
+			or next;
+		$ctx->$k( $v );
+		$num++;
+	}
+
+	return $num;
 }
 
 
@@ -241,6 +265,13 @@ sub get_clientids {
 			};
 		}
 
+	}
+
+	unless ( $rv{duid} or $rv{dcid} or $rv{hwid} ) {
+		# no identifier was found, manufacture a legal one
+		# dhcp-client-identifier, type 0 (arbitrary string)
+		my $t = chr( 0 ) . $ctx->peer_name;
+		$rv{dcid} = $t;
 	}
 
 	return %rv;
