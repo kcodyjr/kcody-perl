@@ -209,7 +209,7 @@ sub run_rem {
 ###############################################################################
 # detail generators
 
-sub get_clientid {
+sub get_clientids {
 	my $ctx = shift;
 	my %rv;
 
@@ -217,7 +217,9 @@ sub get_clientid {
 
 	if ( my $file = $ctx->iscdhcpdleases ) {
 
-		my $obj = Net::OpenVPN::DDNS::Lease->get( $file, $name );
+		my $obj = Net::OpenVPN::DDNS::Lease->get(
+				file => $file,
+				name => $name );
 
 		if ( $obj ) {
 			foreach my $type ( keys $obj->clientids ) {
@@ -229,7 +231,9 @@ sub get_clientid {
 
 	if ( my $path = $ctx->localclientdir ) {
 
-		my $obj = Net::OpenVPN::DDNS::Local->get( $path, $name );
+		my $obj = Net::OpenVPN::DDNS::Local->get(
+				path => $path,
+				name => $name );
 
 		if ( $obj ) {
 			foreach my $type ( keys $obj->clientids ) {
