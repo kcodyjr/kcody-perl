@@ -37,8 +37,7 @@
 
 /* Structure at the top of every shared memory segment.      *
  * next_shmid is used to construct a linked-list of          *
- * segments.  length is unused, except for the first         *
- * segment.                                                  * 
+ * segments.                                                 *
  * REVAMPED 2/7/2005 by K Cody <kcody@users.sourceforge.net> *
  * length and version moved to top segment Descriptor        */
 typedef struct {
@@ -56,6 +55,7 @@ typedef struct {
   unsigned int	 data_chunks;   /* number of chunk segments   */
   unsigned int	 size_topseg;   /* total size of main segment */
   unsigned int	 size_chunkseg; /* total size of appended seg */
+  unsigned int	 nrefs;		/* number of references       */
 } Descriptor;
 
 /* Structure for the per-process segment list.  This list    *
@@ -137,6 +137,12 @@ int	 sharelite_serial(Share *share);
 int	 sharelite_nsegments(Share *share);
 /* report the size of the top segment */
 int	 sharelite_top_seg_size(Share *share);
+/* report the number of counted references */
+int	 sharelite_nrefs(Share *share);
+/* increment the reference counter */
+int	 sharelite_incref(Share *share);
+/* decrement the reference counter */
+int	 sharelite_decref(Share *share);
 
 /* NOTE: The size of the chunk segments can only be set before the     *
  * first chunk segment is created. When there are chunks present, this *

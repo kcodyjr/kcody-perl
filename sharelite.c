@@ -72,6 +72,7 @@ Share *_sharelite_shmat( key_t key, int shmid ) {
 	/* initialize the process private state variables */
 	share->key   = key; /* only to provide a default */
 	share->lock  = LOCK_UN;
+
 	share->flags = share->head->shminfo->seg_perms;
 	share->semid = share->head->shminfo->seg_semid;
 
@@ -493,6 +494,35 @@ int sharelite_chunk_seg_size( Share *share, int segsize ) {
 	}
 
 	return share->head->shminfo->size_chunkseg;
+}
+
+int sharelite_nrefs( Share *share ) {
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	return share->head->shminfo->nrefs;
+}
+
+int sharelite_incref( Share *share ) {
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	REQ_EX_LOCK(share);
+	share->head->shminfo->nrefs++;
+	END_EX_LOCK(share);
+
+	return share->head->shminfo->nrefs;
+}
+
+int sharelite_decref( Share *share ) {
+
+	CALL_NEEDS_SHARE_AND_HEAD(-1);
+
+	REQ_EX_LOCK(share);
+	share->head->shminfo->nrefs--;
+	END_EX_LOCK(share);
+
+	return share->head->shminfo->nrefs;
 }
 
 int sharelite_is_valid( Share *share ) {

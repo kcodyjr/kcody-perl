@@ -136,6 +136,9 @@ int _sharelite_shm_attach( Share *share ) {
 		return -1;
 	}
 
+	node->shminfo  = (Descriptor *) node->shmdata;
+	node->shmdata += sizeof( Descriptor );
+
 	share->head = share->tail = node;
 
 	return 0;

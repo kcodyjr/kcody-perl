@@ -53,7 +53,7 @@ use UNIVERSAL;
 
 use vars qw( $VERSION @ISA %Attrib );
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 @ISA     = qw( Class::Attrib DynaLoader );
 %Attrib  = (
 	Mode		=> 0660,
@@ -89,7 +89,7 @@ sub bind($$) {
 
 	unless ( $self = $this->attach( $ipckey ) ) {
 		$self = $this->create( $ipckey, $size, $mode );
-		$self->unlock();
+		$self->lock( LOCK_UN );
 	}
 
 	return $self;
@@ -356,6 +356,18 @@ sub top_seg_size($) {
 
 sub chunk_seg_size($;$) {
 	return sharelite_chunk_seg_size( shift->{__PACKAGE__}->{share}, @_ );
+}
+
+sub nrefs($;$) {
+	return sharelite_nrefs( shift->{__PACKAGE__}->{share}, @_ );
+}
+
+sub incref($;$) {
+	return sharelite_incref( shift->{__PACKAGE__}->{share}, @_ );
+}
+
+sub decref($;$) {
+	return sharelite_decref( shift->{__PACKAGE__}->{share}, @_ );
 }
 
 
