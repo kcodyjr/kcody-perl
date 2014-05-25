@@ -89,7 +89,7 @@ sub bind($$) {
 
 	unless ( $self = $this->attach( $ipckey ) ) {
 		$self = $this->create( $ipckey, $size, $mode );
-		$self->lock( LOCK_UN );
+		$self->unlock;
 	}
 
 	return $self;
@@ -385,6 +385,12 @@ sub decref($;$) {
 
 =head1 DATA METHODS
 
+=head2 $self->scache();
+
+Returns a scalar reference to the segment cache. Does not guarantee
+freshness, and the reference can become invalid after the next I/O
+operation.
+
 =head2 $self->fetch();
 
 Fetch a previously stored value. If a subclass defines a C<_fresh> method,
@@ -392,6 +398,15 @@ it will be called only when the shared memory value is changed by another
 process. If nothing has been stored yet, C<undef> is returned.
 
 =cut
+
+sub scache($) {
+	my $self = shift;
+	my $obj = $self->{__PACKAGE__};
+
+	return undef unless defined $obj->{scache};
+
+	return \($obj->{scache});
+}
 
 sub fetch($) {
 	my $self = shift;
@@ -404,22 +419,18 @@ sub fetch($) {
 	my $serial = sharelite_serial( $obj->{share} );
 
 	# short circuit remaining tests if cache is found invalid
-	my $dofetch = undef;
+	my $dofetch = 0;
 
 	# definitely fetch if we don't have a matching serial number
 	$dofetch = 1
 		unless $obj->{serial} && ( $obj->{serial} == $serial );
 
 	# same serial; believe the cached value if it isn't too old
+	# a zero ttl means trust the cached value until the serial changes
 	unless ( $dofetch ) {
-
-		$dofetch = 1 unless my $ttl = $self->dwell();
-
-		unless ( $dofetch ) {
-			$dofetch = 1
-				if $obj->{sstamp} + $ttl < time();
+		if ( my $ttl = $self->dwell() ) {
+			$dofetch = 1 if $obj->{sstamp} + $ttl < time();
 		}
-
 	}
 
 	if ( $dofetch ) {
@@ -433,7 +444,8 @@ sub fetch($) {
 			my $changed = defined $obj->{scache}
 					? $data eq $obj->{scache}
 					: 1;
-			&$cref( $self, $obj->{scache} = $data ) if $changed;
+			$obj->{scache} = $data;
+			&$cref( $self ) if $changed;
 		} else {
 			$obj->{scache} = $data;
 		}
@@ -521,6 +533,18 @@ sub _locked($$) {
 	}
 
 	return $rc != 0;
+}
+
+sub unlock($) {
+	return shift->lock( LOCK_UN );
+}
+
+sub readlock($) {
+	return shift->lock( LOCK_SH );
+}
+
+sub writelock($) {
+	return shift->lock( LOCK_EX );
 }
 
 
