@@ -35,7 +35,7 @@ use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.03";
+$VERSION = "1.04";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
