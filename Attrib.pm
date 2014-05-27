@@ -1,7 +1,7 @@
 package Class::Attrib;
 
 #
-# Copyright (C) 2005 by K Cody <kcody@jilcraft.com>
+# Copyright (C) 2005 by K Cody <kcody@cpan.org>
 # All rights reserved.
 #
 # See accompanying files COPYING and LGPL-2.1 for license details.
