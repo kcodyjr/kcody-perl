@@ -1,7 +1,7 @@
 package Class::Attrib;
 
 #
-# Copyright (C) 2005 by K Cody <kcody@cpan.org>
+# Copyright (C) 2005,2014 by Kevin Cody-Little <kcody@cpan.org>
 # All rights reserved.
 #
 # See accompanying files COPYING and LGPL-2.1 for license details.
@@ -29,13 +29,13 @@ use strict;
 use warnings;
 
 use Storable qw( &dclone );
-use Class::Multi 1.01;
+use Class::Multi 1.02;
 use Class::Multi qw( &walk &other &otherpkg );
 use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.04";
+$VERSION = "1.05";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -52,7 +52,7 @@ $VERSION = "1.04";
 
 	our %Attrib = (
 		ClassAttrib		=> 12345,
-		translucent_attrib	=> "foo"
+		translucent_attrib	=> "foo",
 		mandatory_attrib	=> undef,
 	);
 
@@ -216,6 +216,7 @@ sub DESTROY {
 =head1 ATTRIBUTE NAMED ACCESSOR METHODS
 
 Each attribute has a corresponding accessor method with the same name.
+A closure is installed when first called to improve performance.
 
 =head2 $this->foo();
 
@@ -298,7 +299,8 @@ sub AUTOLOAD {
 
 Storing references (blessed or otherwise) in an attribute won't ruffle any
 feathers in Class::Attrib itself, but could cause exceptions to be thrown
-if the composite class has a persistence mechanism.
+if the composite class has a persistence mechanism. Attributes defined
+here are stored separately from the instance itself to avoid collisions.
 
 Class::Attrib is an abstract class. It contains no constructors, therefore
 it cannot be instantiated without some impolite bless hackery.
@@ -307,7 +309,7 @@ it cannot be instantiated without some impolite bless hackery.
 
 =over 
 
-=item K Cody <kcody@users.sourceforge.net>
+=item Kevin Cody-Little <kcody@cpan.org>
 
 =back
 
