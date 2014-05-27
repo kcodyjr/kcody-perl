@@ -78,7 +78,7 @@ is( $share->fetch, 'X' x 10000, '... fetch and compare' );
 is( $share->nsegments, 3, '... check number of segments' );
 
 # check serial number
-is( $share->serial, 2, '... check serial number' );
+is( $share->serial, 3, '... check serial number' );
 
 # set back to a zero value
 ok( $share->store( 0 ), 'store zero numeric value' );
@@ -113,7 +113,7 @@ if ($pid == 0) {
 
   $share->lock( LOCK_SH );
   is( $share->fetch, 2000, '... check stored value' );
-  is( $share->serial, 2003, '... check serial number' );
+  is( $share->serial, 2004, '... check serial number' );
   is( $share->length, 4, '... check data length' );
   $share->lock( LOCK_UN );
 }
