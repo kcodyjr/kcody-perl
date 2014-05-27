@@ -1,0 +1,12 @@
+bin/ipcdone.sh
+bin/test.pl
+IPC/Shm.pm
+IPC/Shm/Make.pm
+IPC/Shm/Segment.pm
+IPC/Shm/Tied.pm
+IPC/Shm/Tied/ARRAY.pm
+IPC/Shm/Tied/HASH.pm
+IPC/Shm/Tied/SCALAR.pm
+Makefile.PL
+MANIFEST
+README
