@@ -3,13 +3,22 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-    'NAME'	=> 'Class::Multi',
-    'VERSION_FROM' => 'Multi.pm', # finds $VERSION
-    'LIBS'	=> [''],   # e.g., '-lm' 
-    'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',     # e.g., '-I/usr/include/other' 
-    'OBJECT'    => '',
-    'dist'      => {
-        COMPRESS => 'gzip', SUFFIX => 'gz',
-    },          
+    META_MERGE		=> {
+    	resources	=> {
+	    repository	=> 'https://github.com/kcodyjr/class-multi',
+	},
+    },
+    NAME		=> 'Class::Multi',
+    LICENSE		=> 'lgpl_2_1',
+    VERSION_FROM	=> 'Multi.pm', # finds $VERSION
+    ABSTRACT_FROM	=> 'Multi.pm',
+    PREREQ_PM		=> {
+    	Carp		=> 0,
+	Exporter	=> 0,
+    },
+    dist		=> {
+        COMPRESS	=> 'gzip',
+	SUFFIX		=> 'gz',
+    },
+    AUTHOR		=> 'Kevin Cody-Little <kcody@cpan.org>',
 );

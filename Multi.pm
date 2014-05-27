@@ -1,7 +1,7 @@
 package Class::Multi;
 
 #
-# Copyright (C) 2005 by K Cody <kcody@users.sourceforge.net>
+# Copyright (C) 2005,2014 by Kevin Cody-Little <kcody@cpan.org>
 # All rights reserved.
 #
 # This software may be modified and/or redistributed under the
@@ -34,7 +34,7 @@ use Exporter;
 # old syntax for PERL 5.004 compat
 use vars qw( $VERSION @ISA @EXPORT_OK );
 
-$VERSION	= '1.01';
+$VERSION	= '1.02';
 @ISA		= qw( Exporter );
 @EXPORT_OK	= qw( &walk &other &otherpkg );
 
@@ -224,3 +224,13 @@ sub AUTOLOAD {
 
 
 1;
+
+=head1 AUTHORS
+
+=over
+
+=item Kevin Cody-Little <kcody@cpan.org>
+
+=back
+
+=cut
