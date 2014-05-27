@@ -13,7 +13,9 @@ WriteMakefile(
     VERSION_FROM	=> 'Attrib.pm', # finds $VERSION
     ABSTRACT_FROM	=> 'Attrib.pm',
     PREREQ_PM		=> {
+	'Carp'		=> 0,
 	'Class::Multi'	=> 1.02,
+	'Storable'	=> 0,
     },
     dist		=> {
         COMPRESS	=> 'gzip',
