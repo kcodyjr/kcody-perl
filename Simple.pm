@@ -62,6 +62,8 @@ $VERSION = '1.01';
 	verify		=> 1
 );
 
+my $PACKAGE = __PACKAGE__ . '';
+
 
 ###
 ### Constructors
@@ -140,7 +142,7 @@ sub attach($$) {
 
 	bless $self = {}, ref( $this ) || $this;
 
-	$self->{__PACKAGE__}->{share} = $share;
+	$self->{share} = $share;
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->_attach()
@@ -187,7 +189,7 @@ sub create($;$) {
 
 	bless $self = {}, $class;
 
-	$self->{__PACKAGE__}->{share} = $share;
+	$self->{share} = $share;
 
 	my $shmid = sharelite_shmid( $share );
 
@@ -233,7 +235,7 @@ sub shmat($$) {
 
 	bless $self = {}, ref( $this ) || $this;
 
-	$self->{__PACKAGE__}->{share} = $share;
+	$self->{share} = $share;
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->_attach()
@@ -260,7 +262,7 @@ sub remove($) {
 	my ( $self ) = @_;
 	my ( $share, $shmid, $ipckey );
 
-	$share  = $self->{__PACKAGE__}->{share}
+	$share  = $self->{share}
 		or return undef;
 
 	$shmid  = sharelite_shmid( $share );
@@ -279,7 +281,7 @@ sub remove($) {
 # otherwise segment removal (and even removal marking) would never occur
 sub DESTROY($) {
 
-	sharelite_shmdt( shift->{__PACKAGE__}->{share} );
+	sharelite_shmdt( shift->{share} );
 
 	return;
 }
@@ -335,51 +337,51 @@ Decrements the shared reference counter.
 =cut
 
 sub key($) {
-	return sharelite_key( shift->{__PACKAGE__}->{share} );
+	return sharelite_key( shift->{share} );
 }
 
 sub shmid($) {
-	return sharelite_shmid( shift->{__PACKAGE__}->{share} );
+	return sharelite_shmid( shift->{share} );
 }
 
 sub flags($) {
-	return sharelite_flags( shift->{__PACKAGE__}->{share} );
+	return sharelite_flags( shift->{share} );
 }
 
 sub length($) {
-	return sharelite_length( shift->{__PACKAGE__}->{share} );
+	return sharelite_length( shift->{share} );
 }
 
 sub serial($) {
-	return sharelite_serial( shift->{__PACKAGE__}->{share} );
+	return sharelite_serial( shift->{share} );
 }
 
 sub is_valid($) {
-	return sharelite_is_valid( shift->{__PACKAGE__}->{share} );
+	return sharelite_is_valid( shift->{share} );
 }
 
 sub nsegments($) {
-	return sharelite_nsegments( shift->{__PACKAGE__}->{share} );
+	return sharelite_nsegments( shift->{share} );
 }
 
 sub top_seg_size($) {
-	return sharelite_top_seg_size( shift->{__PACKAGE__}->{share} );
+	return sharelite_top_seg_size( shift->{share} );
 }
 
 sub chunk_seg_size($;$) {
-	return sharelite_chunk_seg_size( shift->{__PACKAGE__}->{share}, @_ );
+	return sharelite_chunk_seg_size( shift->{share}, @_ );
 }
 
 sub nrefs($;$) {
-	return sharelite_nrefs( shift->{__PACKAGE__}->{share}, @_ );
+	return sharelite_nrefs( shift->{share}, @_ );
 }
 
 sub incref($;$) {
-	return sharelite_incref( shift->{__PACKAGE__}->{share}, @_ );
+	return sharelite_incref( shift->{share}, @_ );
 }
 
 sub decref($;$) {
-	return sharelite_decref( shift->{__PACKAGE__}->{share}, @_ );
+	return sharelite_decref( shift->{share}, @_ );
 }
 
 
@@ -401,61 +403,59 @@ process. If nothing has been stored yet, C<undef> is returned.
 
 sub scache($) {
 	my $self = shift;
-	my $obj = $self->{__PACKAGE__};
 
-	return undef unless defined $obj->{scache};
+	return undef unless defined $self->{scache};
 
-	return \($obj->{scache});
+	return \($self->{scache});
 }
 
 sub fetch($) {
 	my $self = shift;
-	my $obj = $self->{__PACKAGE__};
 
 	carp(  __PACKAGE__ . "->fetch: Called without at least shared lock!" )
 		if $self->_locked( LOCK_UN );
 
 	# determine current shared memory value serial number
-	my $serial = sharelite_serial( $obj->{share} );
+	my $serial = sharelite_serial( $self->{share} );
 
 	# short circuit remaining tests if cache is found invalid
 	my $dofetch = 0;
 
 	# definitely fetch if we don't have a matching serial number
 	$dofetch = 1
-		unless $obj->{serial} && ( $obj->{serial} == $serial );
+		unless $self->{serial} && ( $self->{serial} == $serial );
 
 	# same serial; believe the cached value if it isn't too old
 	# a zero ttl means trust the cached value until the serial changes
 	unless ( $dofetch ) {
 		if ( my $ttl = $self->dwell() ) {
-			$dofetch = 1 if $obj->{sstamp} + $ttl < time();
+			$dofetch = 1 if $self->{sstamp} + $ttl < time();
 		}
 	}
 
 	if ( $dofetch ) {
-		my $data = sharelite_fetch( $obj->{share} );
+		my $data = sharelite_fetch( $self->{share} );
 
 		croak( __PACKAGE__ . "->fetch: failed: $!" )
 			unless defined $data;
 
 		# only bother with strcmp if a subclass cares about changes
 		if ( my $cref = UNIVERSAL::can( $self, '_fresh' ) ) {
-			my $changed = defined $obj->{scache}
-					? $data eq $obj->{scache}
+			my $changed = defined $self->{scache}
+					? $data eq $self->{scache}
 					: 1;
-			$obj->{scache} = $data;
+			$self->{scache} = $data;
 			&$cref( $self ) if $changed;
 		} else {
-			$obj->{scache} = $data;
+			$self->{scache} = $data;
 		}
 
-		$obj->{sstamp} = time();
-		$obj->{serial} = $serial;
+		$self->{sstamp} = time();
+		$self->{serial} = $serial;
 
 	}
 
-	return $obj->{scache};
+	return $self->{scache};
 }
 
 =head2 $self->store( value );
@@ -466,18 +466,17 @@ Stores a string or numeric value in the shared memory segment.
 
 sub store($$) {
 	my $self = shift;
-	my $obj = $self->{__PACKAGE__};
 
 	carp(  __PACKAGE__ . "->store: Called without exclusive lock!" )
 		unless $self->_locked( LOCK_EX );
 
-	my $rc = sharelite_store( $obj->{share}, $_[0], CORE::length( $_[0] ) );
+	my $rc = sharelite_store( $self->{share}, $_[0], CORE::length( $_[0] ) );
 
 	croak( __PACKAGE__ . "->store: failed: $!" )
 		if $rc == -1;
 
 	if ( $self->verify() ) {
-		my $data = sharelite_fetch( $obj->{share} );
+		my $data = sharelite_fetch( $self->{share} );
 
 		croak( __PACKAGE__ . "->store: fetch failed: $!" )
 			unless defined $data;
@@ -488,9 +487,9 @@ sub store($$) {
 	}
 
 	# simulate a fetch because storing also serves to confirm the value
-	$obj->{scache} = $_[0];
-	$obj->{sstamp} = time();
-	$obj->{serial} = sharelite_serial( $obj->{share} );
+	$self->{scache} = $_[0];
+	$self->{sstamp} = time();
+	$self->{serial} = sharelite_serial( $self->{share} );
 
 	# return true so test harnesses pass
 	return 1;
@@ -507,8 +506,11 @@ sub lock($$) {
 
 sub _lock($$) {
 	my ( $self, $flag ) = @_;
+	my $rc;
 
-	my $rc = sharelite_lock( $self->{__PACKAGE__}->{share}, $flag );
+	return 0 if sharelite_locked( $self->{share}, $flag );
+
+	my $rc = sharelite_lock( $self->{share}, $flag );
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_lock: $!" );
@@ -525,7 +527,7 @@ sub locked($$) {
 sub _locked($$) {
 	my ( $self, $flag ) = @_;
 
-	my $rc = sharelite_locked( $self->{__PACKAGE__}->{share}, $flag );
+	my $rc = sharelite_locked( $self->{share}, $flag );
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_locked: $!" );
