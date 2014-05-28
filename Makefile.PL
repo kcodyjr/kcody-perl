@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     META_MERGE		=> {
 	resources	=> {
-	    repository	=> 'https://github.com/kcodyjr/class-attrib',
+	    repository	=> 'https://github.com/kcodyjr/ipcshm-simple',
 	},
     },
 
