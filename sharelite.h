@@ -46,7 +46,7 @@ typedef struct {
 } Header;
 
 /* Structure just under the top of the first segment    *
- * ADDED 2/2005 by Kevin Cody-Little <kcody@cpan.org>   *
+ * ADDED 2/2005 by Kevin Cody-Little <kcody@cpan.org>   */
 typedef struct {
   int		 seg_semid;     /* segment lock semaphore     */
   int		 seg_perms;     /* segment creation flags     */
