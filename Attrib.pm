@@ -35,7 +35,7 @@ use Carp;
 
 use vars qw( $VERSION $AUTOLOAD %Attrib );
 
-$VERSION = "1.05";
+$VERSION = "1.06";
 
 # Abstract base class doesn't have any attributes of its own.
 %Attrib = ();
@@ -182,6 +182,7 @@ sub attrib($;$;$) {
 	return $self->Attrib( @_ ) unless ref $self;
 
 	my $index = "$self";
+	   $index =~ s/^.*=//; # ignore class
 
 	# never return a reference to the real data ;)
 	return dclone( $values{$index} ) unless @_;
@@ -297,10 +298,15 @@ sub AUTOLOAD {
 
 =head1 LIMITATIONS
 
+Attribute values stored on the instance are actually stored within a
+Class::Attrib lexical; this avoids collisions and also removes the
+assumption of a hash. Class::Attrib works perfectly well on scalar
+and array classes as well. However, this also means that attributes
+are invisible to serializers.
+
 Storing references (blessed or otherwise) in an attribute won't ruffle any
 feathers in Class::Attrib itself, but could cause exceptions to be thrown
-if the composite class has a persistence mechanism. Attributes defined
-here are stored separately from the instance itself to avoid collisions.
+if the composite class has a persistence mechanism.
 
 Class::Attrib is an abstract class. It contains no constructors, therefore
 it cannot be instantiated without some impolite bless hackery.
