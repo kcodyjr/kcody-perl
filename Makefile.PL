@@ -11,18 +11,12 @@ WriteMakefile(
     'VERSION_FROM'	=> 'IPC/Shm.pm', # finds $VERSION
     'PERL_MALLOC_OK'	=> 1,
 
-    'LIBS'		=> [''],   # e.g., '-lm' 
-    'DEFINE'		=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'		=> '',     # e.g., '-I/usr/include/other' 
-
-    'OBJECT'		=> '',
-
     'PREREQ_PM'		=> {
     	'Carp'			=> 0,
-	'IPC::Shm::Simple'	=> 0,
+	'IPC::Shm::Simple'	=> 1.03,
 	'Storable'		=> 0,
 	'UNIVERSAL'		=> 0,
-	'Class::Attrib'		=> 0,
+	'Class::Attrib'		=> 1.06,
     },
 
     'dist'		=> {
