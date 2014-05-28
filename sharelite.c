@@ -79,6 +79,8 @@ Share *_sharelite_shmat( key_t key, int shmid ) {
 	share->size_data  = share->head->shminfo->size_topseg
                           - ( sizeof( Header ) + sizeof( Descriptor ) );
 
+	sharelite_incref( share );
+
 	return share;
 }
 

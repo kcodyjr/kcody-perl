@@ -103,6 +103,10 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 		node->shminfo->data_chunks   = 0;
 		node->shminfo->data_serial   = 1;
 		node->shminfo->data_length   = 0;
+		node->shminfo->nrefs         = 1;
+
+		if ( key != IPC_PRIVATE )
+			node->shminfo->nrefs = 2;
 
 	}
 
