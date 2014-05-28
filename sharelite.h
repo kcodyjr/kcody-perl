@@ -4,7 +4,7 @@
  *
  * Originally part of IPC::ShareLite by Maurice Aubrey.
  *
- * Adapted 2/2005 by K Cody <kcody@users.sourceforge.net>
+ * Adapted 2/2005 by Kevin Cody-Little <kcody@cpan.org>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at
@@ -18,7 +18,7 @@
 
 /* Default shared memory segment size.  Each segment is the *
  * same size.  Maximum size is system-dependent (SHMMAX).   *
- * CHANGED 2/2005 by K Cody <kcody@users.sourceforge.net>   *
+ * CHANGED 2/2005 by Kevin Cody-Little <kcody@cpan.org>     *
  * seems this should probably track system page size        *
  * also, now chunk segments can be of different size        *
  * SEG_SIZE is the default, applies when size < MIN_SIZE    */
@@ -26,19 +26,19 @@
 #define SHARELITE_MIN_SIZE  256
 
 /* Magic value for detecting whether sharelite.c created the segment * 
- * ADDED 2/2005 by K Cody <kcody@users.sourceforge.net>              */
+ * ADDED 2/2005 by Kevin Cody-Little <kcody@cpan.org>                */
 #define SHARELITE_MAGIC 0x4C524550  /* 'PERL' */
 
 /* Lock constants used internally by us.  They happen to be the same *
  * as for flock(), but that's purely coincidental                    *
- * CHANGED 2/2005 by K Cody <kcody@users.sourceforge.net>            *
+ * CHANGED 2/2005 by Kevin Cody-Little <kcody@cpan.org>              *
  * Lock constants are now imported from <sys/file.h>                 *
  * internal implementation doesn't care, but interface standards do  */
 
 /* Structure at the top of every shared memory segment.      *
  * next_shmid is used to construct a linked-list of          *
  * segments.                                                 *
- * REVAMPED 2/7/2005 by K Cody <kcody@users.sourceforge.net> *
+ * REVAMPED 2/7/2005 by Kevin Cody-Little <kcody@cpan.org>   *
  * length and version moved to top segment Descriptor        */
 typedef struct {
   unsigned int	 shm_magic;
@@ -46,7 +46,7 @@ typedef struct {
 } Header;
 
 /* Structure just under the top of the first segment    *
- * ADDED 2/2005 by K Cody <kcody@users.sourceforge.net> */
+ * ADDED 2/2005 by Kevin Cody-Little <kcody@cpan.org>   *
 typedef struct {
   int		 seg_semid;     /* segment lock semaphore     */
   int		 seg_perms;     /* segment creation flags     */
@@ -66,7 +66,7 @@ typedef struct {
  * This linked-list may be shorter than the shared memory    *
  * linked-list -- nodes are added on to this list on an      *
  * as-needed basis                                           *
- * REVAMPED 2/2005 by K Cody <kcody@users.sourceforge.net>   *
+ * REVAMPED 2/2005 by Kevin Cody-Little <kcody@cpan.org>     *
  * NOTE: Might also be -longer- than the shared memory list  */
 typedef struct node {
   int		 shmid;		/* doublecheck freshness of this list  */
@@ -78,7 +78,7 @@ typedef struct node {
 
 /* The primary structure for this library.  We pass this back *
  * and forth to perl                                          *
- * REVAMPED 2/2005 by K Cody <kcody@users.sourceforge.net>    *
+ * REVAMPED 2/2005 by Kevin Cody-Little <kcody@cpan.org>      *
  * NOTE, we actually pass the pointer value back and forth    */
 typedef struct {
   key_t         key;		/* ipckey requested at instantiation   */
@@ -93,7 +93,7 @@ typedef struct {
 } Share;                
 
 /* prototypes */
-/* MOSTLY NEW 2/2005 by K Cody <kcody@users.sourceforge.net> */
+/* MOSTLY NEW 2/2005 by Kevin Cody-Little <kcody@cpan.org> */
 
 /* attach to a segment by its shmid */
 Share	*sharelite_shmat(int shmid);

@@ -1,5 +1,4 @@
 MANIFEST
-MANIFEST.SKIP
 README
 README.sharelite
 Makefile.PL
@@ -11,5 +10,4 @@ sharelite_sem.h
 sharelite_shm.h
 sharelite_shm.c
 typemap
-test.pl
-META.yml                                 Module meta-data (added by MakeMaker)
+t/test1.t

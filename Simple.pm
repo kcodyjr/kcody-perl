@@ -3,7 +3,7 @@ package IPC::Shm::Simple;
 use strict;
 
 #
-# Copyright (C) 2005 by K Cody <kcody@users.sourceforge.net>
+# Copyright (C) 2005,2014 by Kevin Cody-Little <kcody@cpan.org>
 #
 # Although this package as a whole is derived from
 # IPC::ShareLite, this particular file is a new work.
@@ -124,7 +124,7 @@ sub attach($$) {
 	confess( __PACKAGE__ . "->attach: Called with string ipckey." )
 		unless $ipckey > 0;
 
-	confess( __PACKAGE__ . "->attach: Called with IPC_PRIVATE!." )
+	confess( __PACKAGE__ . "->attach: Called with IPC_PRIVATE." )
 		if $ipckey == IPC_PRIVATE;
 
 	# NOTE: using $share as private shmid here
@@ -508,6 +508,7 @@ sub _lock($$) {
 	my ( $self, $flag ) = @_;
 	my $rc;
 
+	# short circuit if already locked as requested
 	return 0 if sharelite_locked( $self->{share}, $flag );
 
 	my $rc = sharelite_lock( $self->{share}, $flag );
@@ -536,6 +537,11 @@ sub _locked($$) {
 
 	return $rc != 0;
 }
+
+
+###
+### Higher Level Lock Methods
+###
 
 sub unlock($) {
 	return shift->lock( LOCK_UN );

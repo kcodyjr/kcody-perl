@@ -9,7 +9,7 @@ It is a derivative of IPC::ShareLite by Maurice Aubrey.
 
 COPYRIGHT / LICENSE:
 
-Copyright (C) 2005 K Cody <kcody@users.sourceforge.net>
+Copyright (C) 2005,2014 Kevin Cody-Little <kcody@cpan.org>
 Copyright (C) 1998-2002 Maurice Aubrey <maurice@hevanet.com>
 
 This software may be modified and/or redistributed under the terms of
@@ -25,7 +25,8 @@ modules from the API implementation.
 
 The monolithic new() call is gone, replaced by create(),  attach(), remove().
 
-The unlock() call is gone, use lock( LOCK_UN ).
+The readlock, writelock, and unlock functions mean the calling class doesn't
+have to import any constants. Of course, the old way still works.
 
 There are new shmat() and shmid() calls for effectively working with unkeyed
 shared memory segments.
@@ -60,6 +61,8 @@ DEPENDENCIES:
 
 PORTABILITY:
 
+NOTE: most of this section is old and unverified with current sources.
+
 It has compiled and tested cleanly on:
         x86     - Linux 2.6 Gentoo 2004.0
         x86     - Linux 2.6 Fedora FC2
@@ -93,27 +96,24 @@ There are two dependencies whose list entries have yet to be approved:
 
 GETTING THE SOFTWARE:
 
-They can be downloaded from my CPAN directory, or from SourceForge CVS.
+They can be downloaded from my CPAN directory, or from github.com.
 
-IPC::Shm::Simple can be checked by:
+IPC::Shm::Simple can be checked out by:
 
-CVSROOT=":pserver:anonymous@cvs.sourceforge.net/cvsroot/ipcshm-simple"
-cvs -z3 -d$CVSROOT co ipcshm-simple
+git clone https://github.com/kcodyjr/ipcshm-simple
 
 Class::Multi can be checked out by:
 
-CVSROOT=":pserver:anonymous@cvs.sourceforge.net/cvsroot/class-multi"
-cvs -z3 -d$CVSROOT co class-multi
+git clone https://github.com/kcodyjr/class-multi
 
 Class::Attrib can be checked out by:
 
-CVSROOT=":pserver:anonymous@cvs.sourceforge.net/cvsroot/class-attrib"
-cvs -z3 -d$CVSROOT co class-attrib
+git clone https://github.com/kcodyjr/class-attrib
 
 
 AUTHOR CONTACT INFO:
 
 Bug reports, questions, and flames should be sent to:
 
-K Cody <kcody@users.sourceforge.net>
+Kevin Cody-Little <kcody@cpan.org>
 

@@ -3,32 +3,34 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-    'NAME'	=> 'IPC::Shm::Simple',
-    'ABSTRACT'	=> 'Simple data in SysV shared memory',
-    'AUTHOR'	=> 'K Cody <kcody@jilcraft.com>',
+    META_MERGE		=> {
+	resources	=> {
+	    repository	=> 'https://github.com/kcodyjr/class-attrib',
+	},
+    },
 
+    NAME		=> 'IPC::Shm::Simple',
+    AUTHOR		=> 'Kevin Cody-Little <kcody@cpan.org>',
+    LICENSE		=> 'perl',
 
-    'VERSION_FROM'	=> 'Simple.pm', # finds $VERSION
-    'PERL_MALLOC_OK'	=> 1,
+    VERSION_FROM	=> 'Simple.pm', # finds $VERSION
+    ABSTRACT_FROM	=> 'Simple.pm',
+    PERL_MALLOC_OK	=> 1,
 
-    'LIBS'		=> [''],   # e.g., '-lm' 
-    'DEFINE'		=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'		=> '',     # e.g., '-I/usr/include/other' 
+    OBJECT		=> 'sharelite.o sharelite_shm.o Simple.o',
 
-    'OBJECT'		=> 'sharelite.o sharelite_shm.o Simple.o',
-
-    'PREREQ_PM'		=> {
-    	'Carp'		=> 0,
-    	'Fcntl'		=> 0,
+    PREREQ_PM		=> {
+	Carp		=> 0,
+	DynaLoader	=> 0,
+	Fcntl		=> 0,
+	UNIVERSAL	=> 0,
+	'Class::Attrib'	=> '1.05',
 	'IPC::SysV'	=> 0,
-	'DynaLoader'	=> 0,
-	'UNIVERSAL'	=> 0,
-	'Class::Attrib'	=> 0,
     },
 
     'dist'		=> {
-     	COMPRESS => 'gzip',
-	SUFFIX   => 'gz',
-    },          
+	COMPRESS	=> 'gzip',
+	SUFFIX		=> 'gz',
+    },
 
 );

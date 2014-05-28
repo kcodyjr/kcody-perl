@@ -3,7 +3,7 @@
  *
  * Originally part of IPC::ShareLite by Maurice Aubrey.
  *
- * Adapted 2/2005 by K Cody <kcody@users.sourceforge.net>
+ * Adapted 2/2005 by Kevin Cody-Little <kcody@cpan.org>
  *
  * This code may be modified or redistributed under the terms
  * of either the Artistic or GNU General Public licenses, at
