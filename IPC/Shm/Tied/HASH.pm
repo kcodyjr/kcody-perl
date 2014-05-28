@@ -15,14 +15,9 @@ sub _empty {
 }
 
 sub TIEHASH {
-	my ( $class, $share, @args ) = @_;
+	my ( $class, $this ) = @_;
 
-	# FIXME complain if store is missing
-
-	$class->rebless( $share, @args );
-	$share->reftype( 'HASH' );
-	
-	return $share;
+	return bless $this, $class;
 }
 
 sub FETCH {

@@ -8,35 +8,26 @@ use Carp;
 
 use base 'IPC::Shm::Simple';
 
-use Digest::SHA1	qw( sha1_hex );
+use Digest::SHA1 qw( sha1_hex );
+
+
+###############################################################################
+# package variables
+
+my $IPCKEY = 0xdeadbeef;
+
+our %Attrib = (
+	varname => undef,
+	varanon => undef
+);
 
 our %OURNAME;
 our %OURANON;
 our %LEXICAL;
 
-my $IPCKEY = 0xdeadbeef;
-
-
-
-sub varname {
-	my $this = shift;
-	if ( my $newval = shift ) {
-		return $this->{varname} = $newval;
-	}
-	return $this->{varname};
-}
-
-sub varanon {
-	my $this = shift;
-	if ( my $newval = shift ) {
-		return $this->{varanon} = $newval;
-	}
-	return $this->{varanon};
-}
-
 
 ###############################################################################
-# stand-in hashref containing one identifier or another
+# generate a stand-in hashref containing one identifier or another
 
 sub standin {
 	my ( $this ) = @_;
@@ -66,12 +57,10 @@ sub restand {
 
 	if    ( my $vname = $standin->{varname} ) {
 		$rv = $this->named( $vname );
-		$rv->varname( $vname );
 	}
 
 	elsif ( my $vanon = $standin->{varanon} ) {
 		$rv = $this->anonymous( $vanon );
-		$rv->varanon( $vanon );
 		$rv->retie unless $rv->isa( 'IPC::Shm::Tied' );
 	}
 
@@ -85,14 +74,18 @@ sub restand {
 
 
 ###############################################################################
-# retie a shared segment
+# retie an anonymous shared segment
 
 sub retie {
 	my ( $this ) = @_;
 
-	my $type = $IPC::Shm::ANONTYPE{$this->varanon};
+	confess "not an anonymous segment"
+		unless my $vanon = $this->varanon;
 
-	if ( $type eq 'HASH' ) {
+	my $type = $IPC::Shm::ANONTYPE{$vanon}
+		or confess "did not find a reference type";
+
+	if    ( $type eq 'HASH' ) {
 		tie my %tmp, 'IPC::Shm::Tied', $this;
 		$this->tiedref( \%tmp );
 	}
@@ -117,15 +110,6 @@ sub retie {
 ###############################################################################
 # common methods
 
-sub rebless {
-	my ( $class, $store, @args ) = @_;
-
-	my $this = bless $store, $class;
-
-	$this->incref;
-
-	return $this;
-}
 
 sub DESTROY {
 	my ( $this ) = @_;
@@ -197,6 +181,7 @@ sub lexical($$) {
 
 	return $rv;
 }
+
 
 ###############################################################################
 # create an identifier for an anonymous segment

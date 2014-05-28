@@ -36,37 +36,51 @@ sub TIESCALAR {
 
 
 ###############################################################################
-# accessors
+# special attribute accessors
 
 sub tiedref {
 	my $this = shift;
-	if ( my $newval = shift ) {
-		return $this->{tiedref} = $newval;
-	}
-	return $this->{tiedref};
+
+	return $this->{tiedref}
+		unless my $newval = shift;
+
+	confess "expecting a reference"
+		unless my $reftype = ref( $newval );
+
+	$this->reftype( $reftype );
+
+	return $this->{tiedref} = $newval;
 }
 
 sub reftype {
 	my $this = shift;
-	if ( my $newval = shift ) {
-		if ( my $vanon = $this->varanon ) {
-			my $value = $IPC::Shm::ANONTYPE{$vanon};
-			if ( $value and $value ne $newval ) {
-				$IPC::Shm::ANONTYPE{$vanon} = $newval;
-			}
-		}
-		return $this->{reftype} = $newval;
+
+	return $this->{reftype} unless my $newval = shift;
+
+	# we only care about anonymous segments
+	return $this->{reftype} unless my $vanon = $this->varanon;
+
+	my $value = $IPC::Shm::ANONTYPE{$vanon};
+
+	# and we want to avoid unnecessary shared memory writes
+	unless ( $value and $value eq $newval ) {
+		$IPC::Shm::ANONTYPE{$vanon} = $this->{reftype} =  $newval;
 	}
+
 	return $this->{reftype};
 }
 
 
 ###############################################################################
-# value cache, for the unserialized state
+# abstract empty value representation
 
 sub _empty {
 	croak "Abstract _empty() invocation";
 }
+
+
+###############################################################################
+# value cache, for the unserialized in-memory state
 
 sub vcache {
 	my $this = shift;
