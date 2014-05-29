@@ -32,7 +32,7 @@ is( $share->flags, 0660, '... check its segment mode' );
 
 # check that it is indeed blank
 is( $share->length, 0, '... check zero data length' );
-is( $share->length, 0, '... check zero data serial' );
+is( $share->serial, 1, '... check initial data serial' );
 
 # detach from it
 undef $share;
