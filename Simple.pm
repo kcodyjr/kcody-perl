@@ -62,8 +62,6 @@ $VERSION = '1.04';
 	verify		=> 1
 );
 
-my $PACKAGE = __PACKAGE__ . '';
-
 
 ###
 ### Constructors
@@ -98,8 +96,9 @@ sub bind($$) {
 }
 
 { # BEGIN ObjCache and ObjIndex lexical scope
-my %ObjIndex = ();		# cache key=ipckey value=shmid
-my %ObjCache = ();		# cache key=shmid  value=instance
+my %ShmIndex = ();		# cache key=ipckey value=shmid
+my %ShmShare = ();		# cache key=shmid  value=sharelite
+my %ShmCount = ();		# cache key=shmid  value=integer
 
 =head2 $this->attach( ipckey );
 
@@ -113,7 +112,6 @@ Throws an exception on invalid parameters.
 
 sub attach($$) {
 	my ( $this, $ipckey ) = @_;
-	my ( $share, $self );
 
 	confess( __PACKAGE__ . "->attach: Called without ipckey." )
 		unless defined $ipckey;
@@ -127,30 +125,49 @@ sub attach($$) {
 	confess( __PACKAGE__ . "->attach: Called with IPC_PRIVATE." )
 		if $ipckey == IPC_PRIVATE;
 
-	# NOTE: using $share as private shmid here
-	if ( $share = $ObjIndex{$ipckey} ) {
-		if ( $self = $ObjCache{$share} ) {
-			return $self if $self->is_valid;
-			delete $ObjCache{$share};
+	my $class = ref( $this ) || $this;
+
+	if ( my $shmid = $ShmIndex{$ipckey} ) {
+		my $share = $ShmShare{$shmid};
+		unless ( $share ) {
+			confess( __PACKAGE__ . "->attach: dangling ShmIndex" );
+			delete $ShmIndex{$ipckey};
+			return undef;
 		}
-		delete $ObjIndex{$ipckey};
+
+		bless my $self = {}, $class;
+		$self->{share} = $share;
+		$self->{shmid} = $shmid;
+
+		if ( $self->is_valid ) {
+			$ShmCount{$shmid}++;
+			return $self;
+		}
+
+		delete $ShmCount{$shmid};
+		delete $ShmShare{$shmid};
+		delete $ShmIndex{$ipckey};
+
+		return undef;
 	}
 
-	# NOTE: using $share as sharelite handle here
-	$share = sharelite_attach( $ipckey )
-		or return undef;
+	my $share = sharelite_attach( $ipckey )
+		or return undef; # FIXME should we squawk?
 
-	bless $self = {}, ref( $this ) || $this;
+	my $shmid = sharelite_shmid( $share );
 
+	bless my $self = {}, $class;
 	$self->{share} = $share;
+	$self->{shmid} = $shmid;
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->_attach()
 		or return undef;
 
 	# save the attached object in the cache
-	$ObjIndex{$ipckey} = sharelite_shmid( $share );
-	$ObjCache{$ObjIndex{$ipckey}} = $self;
+	$ShmIndex{$ipckey} = $shmid;
+	$ShmShare{$shmid}  = $share;
+	$ShmCount{$shmid}  = 1;
 
 	return $self;
 }
@@ -176,27 +193,27 @@ Returns blessed reference on success, undef on failure.
 
 sub create($;$) {
 	my ( $this, $ipckey, $size, $mode ) = @_;
-	my ( $share, $class, $self );
 
 	$ipckey ||= IPC_PRIVATE;
 	$size   ||= $this->Size();
 	$mode   ||= $this->Mode();
 
-	$class = ref( $this ) || $this;
+	# FIXME sanity checks?
 
-	$share = sharelite_create( $ipckey, $size, $mode )
-		or return undef;
+	my $class = ref( $this ) || $this;
 
-	bless $self = {}, $class;
-
-	$self->{share} = $share;
+	my $share = sharelite_create( $ipckey, $size, $mode )
+		or return undef; # FIXME should we squawk?
 
 	my $shmid = sharelite_shmid( $share );
 
-	$ObjIndex{$ipckey} = $shmid
-		unless $ipckey == IPC_PRIVATE;
+	bless my $self = {}, $class;
+	$self->{share} = $share;
+	$self->{shmid} = $shmid;
 
-	$ObjCache{$shmid} = $self;
+	$ShmIndex{$ipckey} = $shmid unless $ipckey == IPC_PRIVATE;
+	$ShmShare{$shmid}  = $share;
+	$ShmCount{$shmid}  = 1;
 
 	return $self;
 }
@@ -209,7 +226,6 @@ Attach to an existing shared memory segment by its shmid.
 
 sub shmat($$) {
 	my ( $this, $shmid ) = @_;
-	my ( $share, $self );
 
 	confess( __PACKAGE__ . "->shmat: Called without shmid." )
 		unless defined $shmid;
@@ -223,26 +239,39 @@ sub shmat($$) {
 	confess( __PACKAGE__ . "->shmat: Called with invalid shmid." )
 		if $shmid == -1;
 
-	# NOTE: using share as private shmid here
-	if ( $self = $ObjCache{$shmid} ) {
-		return $self if $self->is_valid;
-		delete $ObjCache{$shmid};
+	my $class = ref( $this ) || $this;
+
+	if ( my $share = $ShmShare{$shmid} ) {
+
+		bless my $self = {}, $class;
+		$self->{share} = $share;
+		$self->{shmid} = $shmid;
+
+		if ( $self->is_valid ) {
+			$ShmCount{$shmid}++;
+			return $self;
+		}
+
+		delete $ShmCount{$shmid};
+		delete $ShmShare{$shmid};
+
+		return undef;
 	}
 
-	# NOTE: using share as sharelite handle here
-	$share = sharelite_shmat( $shmid )
+	my $share = sharelite_shmat( $shmid )
 		or return undef;
 
-	bless $self = {}, ref( $this ) || $this;
-
+	bless my $self = {}, $class;
 	$self->{share} = $share;
+	$self->{shmid} = $shmid;
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->_attach()
 		or return undef;
 
 	# save the attached object in the cache
-	$ObjCache{$shmid} = $self;
+	$ShmShare{$shmid} = $share;
+	$ShmCount{$shmid} = 1;
 
 	return $self;
 }
@@ -263,28 +292,50 @@ sub remove($) {
 	my ( $share, $shmid, $ipckey );
 
 	$share  = $self->{share}
-		or return undef;
+		or return undef; # FIXME: squawk?
 
-	$shmid  = sharelite_shmid( $share );
-	$ipckey = sharelite_key( $share );
+#	$shmid  = $self->{shmid} || sharelite_shmid( $share );
+#	$ipckey = sharelite_key( $share );
 
-	delete $ObjCache{$shmid};
-	delete $ObjIndex{$ipckey};
+#	$self->scache_clean;
+
+#	delete $ShmCount{$shmid};
+#	delete $ShmShare{$shmid};
+#	delete $ShmIndex{$ipckey};
 
 	return ( sharelite_remove( $share ) == -1 ) ? undef : 1;
 }
-
-} # END scope
 
 
 # when the object is destroyed, the sharelite object must be too
 # otherwise segment removal (and even removal marking) would never occur
 sub DESTROY($) {
+	my ( $self ) = @_;
 
-	sharelite_shmdt( shift->{share} );
+	my $shmid = $self->{shmid}
+		or return;
+
+	$ShmCount{$shmid}--;
+
+	return if $ShmCount{$shmid};
+
+	my $share = $self->{share}
+		or return;
+
+	my $ipckey = sharelite_key( $share );
+
+	$self->scache_clean;
+
+	delete $ShmCount{$shmid};
+	delete $ShmShare{$shmid};
+	delete $ShmIndex{$ipckey};
+
+	sharelite_shmdt( $share );
 
 	return;
 }
+
+} # END scope
 
 
 =head1 ACCESSOR METHODS
@@ -393,6 +444,10 @@ Returns a scalar reference to the segment cache. Does not guarantee
 freshness, and the reference can become invalid after the next I/O
 operation.
 
+=head2 $self->scache_clean();
+
+Entirely removes the cache entry for the object.
+
 =head2 $self->fetch();
 
 Fetch a previously stored value. If a subclass defines a C<_fresh> method,
@@ -401,12 +456,29 @@ process. If nothing has been stored yet, C<undef> is returned.
 
 =cut
 
+
+{ # BEGIN private lexical scope
+my %ShmCache = ();		# cache key=shmid  value={}
+				#			scache = string
+				#			serial = integer
+				#			sstamp = timestamp
+
 sub scache($) {
 	my $self = shift;
 
-	return undef unless defined $self->{scache};
+	my $shmid = $self->shmid;
 
-	return \($self->{scache});
+	return undef unless defined $ShmCache{$shmid};
+	return undef unless defined $ShmCache{$shmid}->{scache};
+
+	return \($ShmCache{$shmid}->{scache});
+}
+
+sub scache_clean($) {
+	my $self = shift;
+
+	delete $ShmCache{$self->{shmid}};
+
 }
 
 sub fetch($) {
@@ -415,47 +487,50 @@ sub fetch($) {
 	carp(  __PACKAGE__ . "->fetch: Called without at least shared lock!" )
 		if $self->_locked( LOCK_UN );
 
+	my $share = $self->{share};
+	my $cache = $ShmCache{$self->{shmid}} ||= {};
+
 	# determine current shared memory value serial number
-	my $serial = sharelite_serial( $self->{share} );
+	my $serial = sharelite_serial( $share );
 
 	# short circuit remaining tests if cache is found invalid
 	my $dofetch = 0;
 
 	# definitely fetch if we don't have a matching serial number
 	$dofetch = 1
-		unless $self->{serial} && ( $self->{serial} == $serial );
+		unless $cache->{serial} && ( $cache->{serial} == $serial );
 
 	# same serial; believe the cached value if it isn't too old
 	# a zero ttl means trust the cached value until the serial changes
 	unless ( $dofetch ) {
 		if ( my $ttl = $self->dwell() ) {
-			$dofetch = 1 if $self->{sstamp} + $ttl < time();
+			$dofetch = 1 if $cache->{sstamp} + $ttl < time();
 		}
 	}
 
 	if ( $dofetch ) {
-		my $data = sharelite_fetch( $self->{share} );
+		my $data = sharelite_fetch( $share );
 
 		croak( __PACKAGE__ . "->fetch: failed: $!" )
 			unless defined $data;
 
 		# only bother with strcmp if a subclass cares about changes
 		if ( my $cref = UNIVERSAL::can( $self, '_fresh' ) ) {
-			my $changed = defined $self->{scache}
-					? $data eq $self->{scache}
+			my $changed = defined $cache->{scache}
+					? $data eq $cache->{scache}
 					: 1;
-			$self->{scache} = $data;
+			$cache->{scache} = $data;
 			&$cref( $self ) if $changed;
 		} else {
-			$self->{scache} = $data;
+			$cache->{scache} = $data;
 		}
 
-		$self->{sstamp} = time();
-		$self->{serial} = $serial;
+		$cache->{sstamp} = time();
+		$cache->{serial} = $serial;
 
 	}
 
-	return $self->{scache};
+	return $cache->{scache};
 }
 
 =head2 $self->store( value );
@@ -470,30 +545,35 @@ sub store($$) {
 	carp(  __PACKAGE__ . "->store: Called without exclusive lock!" )
 		unless $self->_locked( LOCK_EX );
 
-	my $rc = sharelite_store( $self->{share}, $_[0], CORE::length( $_[0] ) );
+	my $share = $self->{share};
+	my $cache = $ShmCache{$self->{shmid}} ||= {};
+
+	my $rc = sharelite_store( $share, $_[0], CORE::length( $_[0] ) );
 
 	croak( __PACKAGE__ . "->store: failed: $!" )
 		if $rc == -1;
 
 	if ( $self->verify() ) {
-		my $data = sharelite_fetch( $self->{share} );
+		my $data = sharelite_fetch( $share );
 
 		croak( __PACKAGE__ . "->store: fetch failed: $!" )
 			unless defined $data;
-		
+
 		croak( __PACKAGE__ . "->store: Write verify failed!" )
 			unless $_[0] eq $data;
 
 	}
 
 	# simulate a fetch because storing also serves to confirm the value
-	$self->{scache} = $_[0];
-	$self->{sstamp} = time();
-	$self->{serial} = sharelite_serial( $self->{share} );
+	$cache->{scache} = $_[0];
+	$cache->{sstamp} = time();
+	$cache->{serial} = sharelite_serial( $share );
 
 	# return true so test harnesses pass
 	return 1;
 }
+
+} # END scope
 
 
 ###
@@ -506,7 +586,6 @@ sub lock($$) {
 
 sub _lock($$) {
 	my ( $self, $flag ) = @_;
-	my $rc;
 
 	# short circuit if already locked as requested
 	return 0 if sharelite_locked( $self->{share}, $flag );
@@ -544,15 +623,15 @@ sub _locked($$) {
 ###
 
 sub unlock($) {
-	return shift->lock( LOCK_UN );
+	return shift->_lock( LOCK_UN );
 }
 
 sub readlock($) {
-	return shift->lock( LOCK_SH );
+	return shift->_lock( LOCK_SH );
 }
 
 sub writelock($) {
-	return shift->lock( LOCK_EX );
+	return shift->_lock( LOCK_EX );
 }
 
 
