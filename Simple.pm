@@ -161,7 +161,7 @@ sub attach($$) {
 	$self->{shmid} = $shmid;
 
 	# inform subclasses that an uncached attachment has occurred
-	$self->_attach()
+	$self->ATTACH()
 		or return undef;
 
 	# save the attached object in the cache
@@ -172,7 +172,7 @@ sub attach($$) {
 	return $self;
 }
 
-sub _attach($) {
+sub ATTACH($) {
 	my ( $self ) = @_;
 
 	return 1;
@@ -266,7 +266,7 @@ sub shmat($$) {
 	$self->{shmid} = $shmid;
 
 	# inform subclasses that an uncached attachment has occurred
-	$self->_attach()
+	$self->ATTACH()
 		or return undef;
 
 	# save the attached object in the cache
@@ -306,29 +306,39 @@ sub remove($) {
 	return ( sharelite_remove( $share ) == -1 ) ? undef : 1;
 }
 
-
 # when the object is destroyed, the sharelite object must be too
 # otherwise segment removal (and even removal marking) would never occur
 sub DESTROY($) {
 	my ( $self ) = @_;
 
 	my $shmid = $self->{shmid}
-		or return;
+		or return; # FIXME squawk
 
 	$ShmCount{$shmid}--;
 
 	return if $ShmCount{$shmid};
 
-	my $share = $self->{share}
-		or return;
+	$self->DETACH;
 
-	my $ipckey = sharelite_key( $share );
+	return;
+}
+
+sub DETACH {
+	my ( $self ) = @_;
 
 	$self->scache_clean;
 
+	my $shmid = $self->{shmid}
+		or return; # FIXME squawk
+
+	my $share = $self->{share}
+		or return; # FIXME squawk
+
+	my $ipckey = sharelite_key( $share );
+
 	delete $ShmCount{$shmid};
 	delete $ShmShare{$shmid};
-	delete $ShmIndex{$ipckey};
+	delete $ShmIndex{$ipckey} unless $ipckey = IPC_PRIVATE;
 
 	sharelite_shmdt( $share );
 
@@ -468,8 +478,8 @@ sub scache($) {
 
 	my $shmid = $self->shmid;
 
-	return undef unless defined $ShmCache{$shmid};
-	return undef unless defined $ShmCache{$shmid}->{scache};
+	$ShmCache{$shmid} ||= {};
+	$ShmCache{$shmid}->{scache} ||= '';
 
 	return \($ShmCache{$shmid}->{scache});
 }
@@ -509,24 +519,16 @@ sub fetch($) {
 	}
 
 	if ( $dofetch ) {
-		my $data = sharelite_fetch( $share );
 
-		croak( __PACKAGE__ . "->fetch: failed: $!" )
-			unless defined $data;
-
-		# only bother with strcmp if a subclass cares about changes
-		if ( my $cref = UNIVERSAL::can( $self, '_fresh' ) ) {
-			my $changed = defined $cache->{scache}
-					? $data eq $cache->{scache}
-					: 1;
-			$cache->{scache} = $data;
-			&$cref( $self ) if $changed;
-		} else {
-			$cache->{scache} = $data;
-		}
+		$cache->{scache} = sharelite_fetch( $share )
+			or croak( __PACKAGE__ . "->fetch: failed: $!" );
 
 		$cache->{sstamp} = time();
 		$cache->{serial} = $serial;
+
+		if ( my $cref = UNIVERSAL::can( $self, 'FRESH' ) ) {
+			&$cref( $self );
+		}
 
 	}
 
