@@ -13,7 +13,7 @@ WriteMakefile(
 
     'PREREQ_PM'		=> {
     	'Carp'			=> 0,
-	'IPC::Shm::Simple'	=> 1.04,
+	'IPC::Shm::Simple'	=> 1.05,
 	'Storable'		=> 0,
 	'UNIVERSAL'		=> 0,
 	'Class::Attrib'		=> 1.06,
