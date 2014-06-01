@@ -1,4 +1,5 @@
 Makefile
+Makefile.old
 *.gz
 *.o
 Simple.c
