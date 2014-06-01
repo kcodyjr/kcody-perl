@@ -50,7 +50,7 @@ sub STORE {
 	$this->unlock if $locked;
 
 	if ( ref( $oldval ) ) {
-		$this->discard( $oldval );
+		$this->standin_discard( $oldval );
 	}
 
 	return $value;
@@ -69,7 +69,7 @@ sub CLEAR {
 
 	$this->unlock if $locked;
 
-	$this->discard( $oldval ) if ( $oldval and ref( $oldval ) );
+	$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 
 }
 

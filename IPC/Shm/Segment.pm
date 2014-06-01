@@ -56,6 +56,7 @@ sub named($$) {
 			carp "shmcreate failed: $!";
 			return undef;
 		}
+		$rv->incref;
 		$rv->unlock;
 		$IPC::Shm::NAMEVARS{$sym} = $rv->shmid;
 	}
@@ -146,6 +147,30 @@ sub vartype {
 
 
 ###############################################################################
+# disconnect-time cleanups
+
+sub DETACH {
+	my ( $this ) = @_;
+
+	unless ( $this->nrefs ) {
+		$this->CLEAR;
+		$this->remove;
+		if ( my $vanon = $this->varanon ) {
+			delete $IPC::Shm::ANONVARS{$vanon};
+			delete $IPC::Shm::ANONTYPE{$vanon};
+		}
+
+	}
+
+	$this->SUPER::DETACH();
+
+}
+
+
+###############################################################################
+###############################################################################
+
+###############################################################################
 # generate a stand-in hashref containing one identifier or another
 
 sub standin {
@@ -171,7 +196,7 @@ sub standin {
 # determine the standin variable type based on its name or cookie
 
 sub standin_type {
-	my ( $class, $standin ) = @_;
+	my ( $callclass, $standin ) = @_;
 
 	if ( my $vanon = $standin->{varanon} ) {
 		return $IPC::Shm::ANONTYPE{$vanon} || 'INVALID';
@@ -191,7 +216,7 @@ sub standin_type {
 # get back the shared memory id given a standin from above
 
 sub standin_shmid {
-	my ( $class, $standin ) = @_;
+	my ( $callclass, $standin ) = @_;
 
 	if ( my $vname = $standin->{varname} ) {
 		return $IPC::Shm::NAMEVARS{$vname};
@@ -208,7 +233,7 @@ sub standin_shmid {
 ###############################################################################
 # get back the object given a standin from above
 
-sub restand {
+sub standin_restand {
 	my ( $callclass, $standin ) = @_;
 
 	my $shmid = $callclass->standin_shmid( $standin );
@@ -237,22 +262,13 @@ sub restand {
 ###############################################################################
 # indicate a standin is being thrown away
 
-sub discard {
-	my ( $class, $standin ) = @_;
+sub standin_discard {
+	my ( $callclass, $standin ) = @_;
 
-	my $this = $class->restand( $standin )
-		or return undef;
+	my $this = $callclass->standin_restand( $standin )
+		or return;
 
 	$this->decref;
-
-	unless ( $this->nrefs ) {
-		$this->CLEAR;
-		$this->remove;
-		if ( my $vanon = $this->varanon ) {
-			delete $IPC::Shm::ANONVARS{$vanon};
-			delete $IPC::Shm::ANONTYPE{$vanon};
-		}
-	}
 
 }
 

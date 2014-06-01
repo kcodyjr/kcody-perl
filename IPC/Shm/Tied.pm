@@ -107,6 +107,18 @@ sub tiedref {
 	return $TiedRef{$shmid};
 }
 
+sub standin_tiedref {
+	my ( $callclass, $standin ) = @_;
+
+	my $shmid = $callclass->standin_shmid( $standin );
+
+	return $TiedRef{$shmid} if defined $TiedRef{$shmid};
+
+	my $this = $callclass->standin_restand( $standin );
+
+	return $this->tiedref;
+}
+
 } # END private lexicals
 
 sub reftype {

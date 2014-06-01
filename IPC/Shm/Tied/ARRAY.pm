@@ -48,7 +48,7 @@ sub STORE {
 
 	$this->unlock if $locked;
 
-	$this->discard( $oldval ) if ( $oldval and ref( $oldval ) );
+	$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 
 	return $value;
 }
@@ -127,7 +127,7 @@ sub CLEAR {
 	$this->unlock if $locked;
 
 	foreach my $oldval ( @{$vcache} ) {
-		$this->discard( $oldval ) if ( $oldval and ref( $oldval ) );
+		$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 	}
 
 	return;

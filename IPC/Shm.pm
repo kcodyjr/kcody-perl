@@ -96,7 +96,7 @@ sub UNIVERSAL::shm : ATTR(ANY) {
 	$sym  = _attrtie_normalize_symbol( $sym, $type );
 
 	my $segment = $sym eq 'LEXICAL'
-		? IPC::Shm::Segment->lexical( $ref )
+		? IPC::Shm::Segment->anonymous
 		: IPC::Shm::Segment->named( $sym )
 		or confess "Unable to find shm store";
 

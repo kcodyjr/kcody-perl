@@ -137,13 +137,7 @@ sub makeshm {
 sub getback {
 	my ( $standin ) = @_;
 
-	my $share = IPC::Shm::Tied->restand( $standin )
-		or confess "failed to restand standin";
-
-	my $rv = $share->tiedref
-		or carp "BUG: tiedref is empty";
-
-	return $rv;
+	return IPC::Shm::Tied->standin_tiedref( $standin );
 }
 
 
