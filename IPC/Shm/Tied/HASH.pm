@@ -3,6 +3,24 @@ use warnings;
 use strict;
 use Carp;
 
+#
+# Copyright (c) 2014 by Kevin Cody-Little <kcody@cpan.org>
+#
+# This code may be modified or redistributed under the terms
+# of either the Artistic or GNU General Public licenses, at
+# the modifier or redistributor's discretion.
+#
+
+=head1 NAME
+
+IPC::Shm::Tied::HASH
+
+=head1 SYNOPSIS
+
+This class is part of the IPC::Shm implementation. You should not be using it directly.
+
+=cut
+
 # Loaded from IPC::Shm::Tied, so don't reload it
 use vars qw( @ISA );
 @ISA = qw( IPC::Shm::Tied );
