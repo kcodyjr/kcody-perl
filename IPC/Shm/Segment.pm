@@ -21,104 +21,6 @@ our %Attrib = (
 	varanon => undef
 );
 
-our %OURNAME;
-our %OURANON;
-our %LEXICAL;
-
-
-###############################################################################
-# generate a stand-in hashref containing one identifier or another
-
-sub standin {
-	my ( $this ) = @_;
-
-	if    ( my $vname = $this->varname ) {
-		return { varname => $vname };
-	}
-
-	elsif ( my $vanon = $this->varanon ) {
-		return { varanon => $vanon };
-	}
-
-	else {
-		carp __PACKAGE__.' object has no identifier';
-		return undef;
-	}
-
-}
-
-
-###############################################################################
-# get back the object given a standin from above
-
-sub restand {
-	my ( $this, $standin ) = @_;
-	my ( $rv );
-
-	if    ( my $vname = $standin->{varname} ) {
-		$rv = $this->named( $vname );
-	}
-
-	elsif ( my $vanon = $standin->{varanon} ) {
-		$rv = $this->anonymous( $vanon );
-		$rv->retie unless $rv->isa( 'IPC::Shm::Tied' );
-	}
-
-	else {
-		carp __PACKAGE__.' standin has no identifier';
-		return undef;
-	}
-
-	return $rv;
-}
-
-
-###############################################################################
-# retie an anonymous shared segment
-
-sub retie {
-	my ( $this ) = @_;
-
-	confess "not an anonymous segment"
-		unless my $vanon = $this->varanon;
-
-	my $type = $IPC::Shm::ANONTYPE{$vanon}
-		or confess "did not find a reference type";
-
-	if    ( $type eq 'HASH' ) {
-		tie my %tmp, 'IPC::Shm::Tied', $this;
-		$this->tiedref( \%tmp );
-	}
-
-	elsif ( $type eq 'ARRAY' ) {
-		tie my @tmp, 'IPC::Shm::Tied', $this;
-		$this->tiedref( \@tmp );
-	}
-
-	elsif ( $type eq 'SCALAR' ) {
-		tie my $tmp, 'IPC::Shm::Tied', $this;
-		$this->tiedref( \$tmp );
-	}
-
-	else {
-		confess "unknown reference type";
-	}
-
-}
-
-
-###############################################################################
-# common methods
-
-
-sub DESTROY {
-	my ( $this ) = @_;
-print "segment destroying\n";
-	$this->decref;
-	$this->SUPER::DESTROY;
-
-}
-
 
 ###############################################################################
 ###############################################################################
@@ -154,6 +56,7 @@ sub named($$) {
 			carp "shmcreate failed: $!";
 			return undef;
 		}
+		$rv->unlock;
 		$IPC::Shm::NAMEVARS{$sym} = $rv->shmid;
 	}
 
@@ -164,35 +67,7 @@ sub named($$) {
 
 
 ###############################################################################
-# get the anonymous segment for a lexical (by reference), creating if needed
-
-sub lexical($$) {
-	my ( $class, $ref ) = @_;
-	my ( $rv );
-
-	if ( my $aname = $LEXICAL{$ref} ) {
-		print "reattaching lexical\n";
-		return $class->anonymous( $aname );
-	}
-
-	$rv = $class->anonymous;
-
-	$LEXICAL{$ref} = $rv->varanon;
-
-	return $rv;
-}
-
-
-###############################################################################
-# create an identifier for an anonymous segment
-
-sub _new_anonymous_name {
-	return sha1_hex( rand( 10000 ) . ' ' . $$ );
-}
-
-
-###############################################################################
-# attach to an anonymous segment by cookie
+# attach to an anonymous segment by cookie, or create a new one
 
 sub anonymous {
 	my ( $class, $aname ) = @_;
@@ -219,13 +94,12 @@ sub anonymous {
 		}
 
 		$rv->unlock;
-		$aname = _new_anonymous_name();
+		$aname = sha1_hex( rand( 10000 ) . ' ' . $$ );
 		$IPC::Shm::ANONVARS{$aname} = $rv->shmid;
 
 	}
 
 	$rv->varanon( $aname );
-	$OURANON{$aname} = $rv->standin;
 
 	return $rv;
 }
@@ -235,23 +109,149 @@ sub anonymous {
 ###############################################################################
 
 ###############################################################################
-# garbage collection
+# produce a human-readable identifier for the variable
 
-sub END {
+sub varid {
+	my ( $this ) = @_;
 
-	foreach my $vanon ( keys %OURANON ) {
-		my $stand = $OURANON{$vanon};
+	if ( my $vname = $this->varname ) {
+		return 'NAME=' . $vname;
+	}
 
-		my $share = __PACKAGE__->restand( $stand );
-		next unless $share;
+	if ( my $vanon = $this->varanon ) {
+		return 'ANON=' . $vanon;
+	}
 
-		$share->decref;
-		next if $share->nrefs;
+	return "UNKNOWN!";
+}
 
-		delete $IPC::Shm::ANONVARS{$vanon};
-		delete $IPC::Shm::ANONTYPE{$vanon};
-		$share->remove;
+###############################################################################
+# determine the variable type based on its name or cookie
 
+sub vartype {
+	my ( $this ) = @_;
+
+	if ( my $vanon = $this->varanon ) {
+		return $IPC::Shm::ANONTYPE{$vanon} || 'INVALID';
+	}
+
+	my $vname = $this->varname;
+
+	return 'HASH' if $vname =~ /^%/;
+	return 'ARRAY' if $vname =~ /^@/;
+	return 'SCALAR' if $vname =~ /^\$/;
+
+	return 'INVALID';
+}
+
+
+###############################################################################
+# generate a stand-in hashref containing one identifier or another
+
+sub standin {
+	my ( $this ) = @_;
+
+	if    ( my $vname = $this->varname ) {
+		return { varname => $vname };
+	}
+
+	elsif ( my $vanon = $this->varanon ) {
+		return { varanon => $vanon };
+	}
+
+	else {
+		carp __PACKAGE__ . ' object has no identifier';
+		return undef;
+	}
+
+}
+
+
+###############################################################################
+# determine the standin variable type based on its name or cookie
+
+sub standin_type {
+	my ( $class, $standin ) = @_;
+
+	if ( my $vanon = $standin->{varanon} ) {
+		return $IPC::Shm::ANONTYPE{$vanon} || 'INVALID';
+	}
+
+	my $vname = $standin->{varname};
+
+	return 'HASH' if $vname =~ /^%/;
+	return 'ARRAY' if $vname =~ /^@/;
+	return 'SCALAR' if $vname =~ /^\$/;
+
+	return 'INVALID';
+}
+
+
+###############################################################################
+# get back the shared memory id given a standin from above
+
+sub standin_shmid {
+	my ( $class, $standin ) = @_;
+
+	if ( my $vname = $standin->{varname} ) {
+		return $IPC::Shm::NAMEVARS{$vname};
+	}
+
+	if ( my $vanon = $standin->{varanon} ) {
+		return $IPC::Shm::ANONVARS{$vanon};
+	}
+
+	return 0;
+}
+
+
+###############################################################################
+# get back the object given a standin from above
+
+sub restand {
+	my ( $callclass, $standin ) = @_;
+
+	my $shmid = $callclass->standin_shmid( $standin );
+
+	unless ( $shmid ) {
+		carp "could not get shmid for standin";
+		return undef;
+	}
+
+	my $class = 'IPC::Shm::Tied::' . $callclass->standin_type( $standin );
+
+	my $rv = $class->shmat( $shmid );
+
+	unless ( $rv ) {
+		carp "restand_obj shmat failed: $!\n";
+		return undef;
+	}
+
+	$rv->varname( $standin->{varname} ) if $standin->{varname};
+	$rv->varanon( $standin->{varanon} ) if $standin->{varanon};
+
+	return $rv;
+}
+
+
+###############################################################################
+# indicate a standin is being thrown away
+
+sub discard {
+	my ( $class, $standin ) = @_;
+
+	my $this = $class->restand( $standin )
+		or return undef;
+
+	$this->decref;
+
+	unless ( $this->nrefs ) {
+		$this->CLEAR;
+		$this->remove;
+		if ( my $vanon = $this->varanon ) {
+			delete $IPC::Shm::ANONVARS{$vanon};
+			delete $IPC::Shm::ANONTYPE{$vanon};
+		}
 	}
 
 }

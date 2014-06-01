@@ -10,8 +10,13 @@ use Data::Dumper;
 our $variable : shm;
 
 print "variable0: ", $variable, "\n";
+print "variable0: ", Dumper( $variable ), "\n";
 
 print "changing variable\n";
+
+$variable = {};
+
+print "variableZ: ", $variable, "\n";
 
 $variable = 'onetwothree';
 

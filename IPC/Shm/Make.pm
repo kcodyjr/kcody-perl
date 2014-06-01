@@ -26,6 +26,7 @@ use Carp;
 use base 'Exporter';
 our @EXPORT = qw( makeshm getback );
 
+use Data::Dumper;
 
 ###############################################################################
 # lower level migration handlers
@@ -41,6 +42,7 @@ sub _makeshm_scalar {
 	$obj->incref;
 	$obj->unlock;
 
+#	$obj->reftype( 'SCALAR' );
 	$obj->tiedref( $ref );
 
 	return $obj->standin;
@@ -57,6 +59,7 @@ sub _makeshm_array {
 	$obj->incref;
 	$obj->unlock;
 
+#	$obj->reftype( 'ARRAY' );
 	$obj->tiedref( $ref );
 
 	return $obj->standin;
@@ -73,6 +76,7 @@ sub _makeshm_hash {
 	$obj->incref;
 	$obj->unlock;
 
+#	$obj->reftype( 'HASH' );
 	$obj->tiedref( $ref );
 
 	return $obj->standin;
@@ -133,7 +137,7 @@ sub makeshm {
 sub getback {
 	my ( $standin ) = @_;
 
-	my $share = IPC::Shm::Segment->restand( $standin )
+	my $share = IPC::Shm::Tied->restand( $standin )
 		or confess "failed to restand standin";
 
 	my $rv = $share->tiedref

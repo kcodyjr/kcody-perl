@@ -21,7 +21,7 @@ use Carp;
 
 use Attribute::Handlers;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 
 ###############################################################################
@@ -112,12 +112,12 @@ sub UNIVERSAL::shm : ATTR(ANY) {
 		$obj = tie $$ref, 'IPC::Shm::Tied', $segment, @$data;
 	}
 
+#	$obj->reftype( $type );
 	$obj->tiedref( $ref );
 
 	if ( $sym eq '%IPC::Shm::NAMEVARS' ) {
 		unless ( $IPC::Shm::NAMEVARS{$sym} ) {
 			$IPC::Shm::NAMEVARS{$sym} = $segment->shmid;
-			$segment->incref;
 		}
 	}
 

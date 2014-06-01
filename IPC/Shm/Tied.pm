@@ -9,8 +9,8 @@ use IPC::Shm::Tied::HASH;
 use IPC::Shm::Tied::ARRAY;
 use IPC::Shm::Tied::SCALAR;
 
-use Data::Dumper;
-use Storable qw( freeze thaw );
+use Scalar::Util qw( weaken );
+use Storable	 qw( freeze thaw );
 
 
 ###############################################################################
@@ -36,26 +36,88 @@ sub TIESCALAR {
 
 
 ###############################################################################
-# special attribute accessors
+# reconstructor - dynamically create a tied reference
+
+sub retie {
+	my ( $this ) = @_;
+	my ( $rv );
+
+	my $type = $this->vartype;
+
+	if    ( $type eq 'HASH' ) {
+		tie my %tmp, 'IPC::Shm::Tied', $this;
+		$this->tiedref( $rv = \%tmp );
+	}
+
+	elsif ( $type eq 'ARRAY' ) {
+		tie my @tmp, 'IPC::Shm::Tied', $this;
+		$this->tiedref( $rv = \@tmp );
+	}
+
+	elsif ( $type eq 'SCALAR' ) {
+		tie my $tmp, 'IPC::Shm::Tied', $this;
+		$this->tiedref( $rv = \$tmp );
+	}
+
+	else {
+		confess "unknown reference type";
+	}
+
+	return $rv;
+}
+
+
+###############################################################################
+# store the tied reference so we can get it back from the object later
+
+{ # BEGIN private lexicals
+my %TiedRef = ();
+
+sub tiedref_clean {
+	delete $TiedRef{shift->{shmid}};
+	return;
+}
 
 sub tiedref {
 	my $this = shift;
 
-	return $this->{tiedref}
-		unless my $newval = shift;
+	my $shmid = $this->{shmid};
 
-	confess "expecting a reference"
-		unless my $reftype = ref( $newval );
+	if ( my $newval = shift ) {
 
-	$this->reftype( $reftype );
+		unless ( defined $newval ) {
+			delete $TiedRef{$shmid};
+			return;
+		}
 
-	return $this->{tiedref} = $newval;
+		confess __PACKAGE__ . "->tiedref() expects a reference"
+			unless my $reftype = ref( $newval );
+
+		$this->reftype( $reftype );
+
+		$TiedRef{$shmid} = $newval;
+		weaken $TiedRef{$shmid};
+
+		return $newval;
+	}
+
+	# keep a temporary reference to the end of this sub
+	my $tv = $this->retie unless defined $TiedRef{$shmid};
+
+	return $TiedRef{$shmid};
 }
+
+} # END private lexicals
 
 sub reftype {
 	my $this = shift;
 
 	return $this->{reftype} unless my $newval = shift;
+
+	# avoid unnecessary shared memory access
+	if ( $this->{reftype} ) {
+		return $newval if $newval eq $this->{reftype};
+	}
 
 	# we only care about anonymous segments
 	return $this->{reftype} unless my $vanon = $this->varanon;
@@ -64,36 +126,61 @@ sub reftype {
 
 	# and we want to avoid unnecessary shared memory writes
 	unless ( $value and $value eq $newval ) {
-		$IPC::Shm::ANONTYPE{$vanon} = $this->{reftype} =  $newval;
+		$IPC::Shm::ANONTYPE{$vanon} =  $newval;
 	}
 
-	return $this->{reftype};
+	return $this->{reftype} = $newval;
 }
 
 
 ###############################################################################
 # abstract empty value representation
 
-sub _empty {
-	croak "Abstract _empty() invocation";
+sub EMPTY {
+	croak "Abstract EMPTY() invocation";
 }
 
 
 ###############################################################################
 # value cache, for the unserialized in-memory state
 
+{ # BEGIN private lexicals
+my %ValCache = ();
+
 sub vcache {
 	my $this = shift;
 
-	if ( my $create = shift ) {
-		return $this->{vcache} = $create;
+	my $shmid = $this->{shmid};
+
+	if ( my $newval = shift ) {
+		return $ValCache{$shmid} = $newval;
 	}
 
-	unless ( defined $this->{vcache} ) {
-		$this->{vcache} = $this->_empty;
+	unless ( defined $ValCache{$shmid} ) {
+		$ValCache{$shmid} = $this->EMPTY;
 	}
 
-	return $this->{vcache};
+	return $ValCache{$shmid};
+}
+
+sub vcache_clean {
+	my ( $this ) = @_;
+
+	delete $ValCache{$this->{shmid}};
+
+	return;
+}
+
+} # END private lexicals
+
+sub DETACH {
+	my ( $this ) = @_;
+
+	$this->vcache_clean;
+	$this->tiedref_clean;
+	$this->SUPER::DETACH;
+
+	return;
 }
 
 
@@ -102,23 +189,17 @@ sub vcache {
 
 # reads from scache, writes to vcache
 # called by IPC::Shm::Simple::fetch
-sub _fresh {
+sub FRESH {
 	my ( $this ) = @_;
 
-	print "deserializing ", $this->serial, "\n";
 	my $thawed = eval { thaw( ${$this->scache} ) };
-	$this->vcache( $thawed ? $thawed : $this->_empty );
-
-	print Dumper( $this->vcache ), "\n";
+	$this->vcache( $thawed ? $thawed : $this->EMPTY );
 
 }
 
 # reads from vcache, calls store
 sub flush {
 	my ( $this ) = @_;
-
-	print "serializing ", $this->serial + 1, "\n";
-	print Dumper( $this->vcache ), "\n";
 
 	$this->store( freeze( $this->vcache ) );
 	

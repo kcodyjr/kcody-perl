@@ -10,8 +10,8 @@ use vars qw( @ISA );
 use IPC::Shm::Make;
 
 
-sub _empty {
-	return \'';
+sub EMPTY {
+	return \undef;
 }
 
 sub TIESCALAR {
@@ -22,6 +22,7 @@ sub TIESCALAR {
 
 sub FETCH {
 	my ( $this ) = @_;
+
 	my $locked = $this->readlock;
 
 	$this->fetch;
@@ -35,19 +36,41 @@ sub FETCH {
 
 sub STORE {
 	my ( $this, $value ) = @_;
-	my $locked = $this->writelock;
 
 	makeshm( \$value );
+
+	my $locked = $this->writelock;
+
+	$this->fetch;
+	my $oldval = ${$this->vcache};
+
 	$this->vcache( \$value );
 	$this->flush;
 
 	$this->unlock if $locked;
+
+	if ( ref( $oldval ) ) {
+		$this->discard( $oldval );
+	}
+
 	return $value;
 }
 
-sub UNTIE {
+sub CLEAR {
 	my ( $this ) = @_;
-	print "untying scalar shared\n";	
+
+	my $locked = $this->writelock;
+
+	$this->fetch;
+	my $oldval = ${$this->vcache};
+
+	$this->vcache( $this->EMPTY );
+	$this->flush;
+
+	$this->unlock if $locked;
+
+	$this->discard( $oldval ) if ( $oldval and ref( $oldval ) );
+
 }
 
 
