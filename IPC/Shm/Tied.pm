@@ -2,6 +2,119 @@ package IPC::Shm::Tied;
 use warnings;
 use strict;
 use Carp;
+#
+# Copyright (c) 2014 by Kevin Cody-Little <kcody@cpan.org>
+#
+# This code may be modified or redistributed under the terms
+# of either the Artistic or GNU General Public licenses, at
+# the modifier or redistributor's discretion.
+#
+
+=head1 NAME
+
+IPC::Shm::Tied
+
+=head1 SYNOPSIS
+
+This class is part of the IPC::Shm implementation. You should
+not be using it directly, as doing so would confuse the
+garbage collection routines.
+
+=head1 SUPERCLASS
+
+This class is a derivative of IPC::Shm::Segment, which in turn
+is a derivative of IPC::Shm::Simple.
+
+=head1 CONSTRUCTORS
+
+=head2 TIEHASH, TIEARRAY, TIESCALAR
+
+This package supports the tie() call.
+
+=head2 $this->retie
+
+When an anonymous variable is dereferenced, and in some other
+circumstances, it has to be tied to a variable so it can be
+accessed normally.
+
+=head1 DESTRUCTOR
+
+=head2 $this->DETACH
+
+Called from IPC::Shm::Simple when the last in-process instance
+of this same segment is being DESTROYed.
+
+=head1 TIED REFERENCE RETRIEVAL
+
+=head2 $this->tiedref
+
+Retrieves a reference to the object's associated
+tied variable. Calls retie() when necessary.
+
+=head2 $this->tiedref( $reference )
+
+Stores a reference to the object's associated tied variable.
+This allows retie() to be avoided most of the time.
+
+=head2 $this->tiedref_clean
+
+Removes the object's tied reference from the cache.
+
+=head2 $this->standin_tiedref( $standin )
+
+Returns a reference to the tied variable, given a standin hash.
+See IPC::Shm::Segment for more about standins.
+
+=head2 $this->reftype( $reftype )
+
+Stores the type of object the associated reference
+points to. This makes the retie() method possible
+for anonymous segments.
+
+Valid values are 'HASH', 'ARRAY', and 'SCALAR'.
+
+=head2 $this->reftype
+
+Retrieves the reference type stored above.
+
+=head1 VALUE CACHE METHODS
+
+=head2 $this->vcache
+
+Retrieves the cached copy of the deserializer's last run.
+
+=head2 $this->vcache( $newvalue )
+
+Stores a new cached value, discarding the old. The Storable
+module expects this to be a reference (no raw strings).
+
+=head2 $this->vcache_clean
+
+Removes the object's value cache from in-process memory.
+
+=head2 $class->EMPTY
+
+Returns a reference to an empty object, compatible with
+the vcache method above. This is an abstract method and
+must be implemented by inheriting classes.
+
+=head1 SERIALIZE/DESERIALIZE
+
+=head2 FRESH
+
+Called by IPC::Shm::Simple->fetch when a new value is
+actually read in from shared memory. The deserializing
+step happens here.
+
+=head2 $this->flush
+
+Serializes and writes the contents of the value cache to shared memory.
+
+
+=cut
+
+###############################################################################
+# dependencies
 
 use base 'IPC::Shm::Segment';
 
@@ -68,15 +181,24 @@ sub retie {
 
 
 ###############################################################################
+# destructor - called when the last in-process instance is DESTROYed
+
+sub DETACH {
+	my ( $this ) = @_;
+
+	$this->vcache_clean;
+	$this->tiedref_clean;
+	$this->SUPER::DETACH;
+
+	return;
+}
+
+
+###############################################################################
 # store the tied reference so we can get it back from the object later
 
 { # BEGIN private lexicals
 my %TiedRef = ();
-
-sub tiedref_clean {
-	delete $TiedRef{shift->{shmid}};
-	return;
-}
 
 sub tiedref {
 	my $this = shift;
@@ -105,6 +227,11 @@ sub tiedref {
 	my $tv = $this->retie unless defined $TiedRef{$shmid};
 
 	return $TiedRef{$shmid};
+}
+
+sub tiedref_clean {
+	delete $TiedRef{shift->{shmid}};
+	return;
 }
 
 sub standin_tiedref {
@@ -146,14 +273,6 @@ sub reftype {
 
 
 ###############################################################################
-# abstract empty value representation
-
-sub EMPTY {
-	croak "Abstract EMPTY() invocation";
-}
-
-
-###############################################################################
 # value cache, for the unserialized in-memory state
 
 { # BEGIN private lexicals
@@ -176,23 +295,18 @@ sub vcache {
 }
 
 sub vcache_clean {
-	my ( $this ) = @_;
-
-	delete $ValCache{$this->{shmid}};
-
+	delete $ValCache{shift->{shmid}};
 	return;
 }
 
 } # END private lexicals
 
-sub DETACH {
-	my ( $this ) = @_;
 
-	$this->vcache_clean;
-	$this->tiedref_clean;
-	$this->SUPER::DETACH;
+###############################################################################
+# abstract empty value representation
 
-	return;
+sub EMPTY {
+	croak "Abstract EMPTY() invocation";
 }
 
 
