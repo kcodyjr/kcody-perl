@@ -1,0 +1,7 @@
+Makefile
+*.gz
+*.o
+Simple.c
+Simple.bs
+blib
+pm_to_blib
