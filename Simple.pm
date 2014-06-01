@@ -338,7 +338,7 @@ sub DETACH {
 
 	delete $ShmCount{$shmid};
 	delete $ShmShare{$shmid};
-	delete $ShmIndex{$ipckey} unless $ipckey = IPC_PRIVATE;
+	delete $ShmIndex{$ipckey} unless $ipckey == IPC_PRIVATE;
 
 	sharelite_shmdt( $share );
 
@@ -478,10 +478,10 @@ sub scache($) {
 
 	my $shmid = $self->shmid;
 
-	$ShmCache{$shmid} ||= {};
-	$ShmCache{$shmid}->{scache} ||= '';
+	my $cache = $ShmCache{$shmid} ||= {};
+	$cache->{scache} ||= '';
 
-	return \($ShmCache{$shmid}->{scache});
+	return \($cache->{scache});
 }
 
 sub scache_clean($) {
@@ -498,7 +498,8 @@ sub fetch($) {
 		if $self->_locked( LOCK_UN );
 
 	my $share = $self->{share};
-	my $cache = $ShmCache{$self->{shmid}} ||= {};
+	my $shmid = $self->{shmid};
+	my $cache = $ShmCache{$shmid} ||= {};
 
 	# determine current shared memory value serial number
 	my $serial = sharelite_serial( $share );
@@ -520,8 +521,10 @@ sub fetch($) {
 
 	if ( $dofetch ) {
 
-		$cache->{scache} = sharelite_fetch( $share )
-			or croak( __PACKAGE__ . "->fetch: failed: $!" );
+		$cache->{scache} = sharelite_fetch( $share );
+
+		croak( __PACKAGE__ . "->fetch: failed: $!" )
+			unless defined $cache->{scache};
 
 		$cache->{sstamp} = time();
 		$cache->{serial} = $serial;

@@ -29,7 +29,7 @@ Node *_shmseg_shmat( int shmid ) {
 	char *shmaddr;
 	Node *node;
 
-	if ( ( shmaddr = shmat( shmid, (char *) NULL, 0 ) ) == NULL )
+	if ( ( shmaddr = shmat( shmid, (char *) NULL, 0 ) ) == (void *) -1 )
 		return NULL;
 
 	if ( ( node = malloc( sizeof( Node ) ) ) == NULL ) {
@@ -103,10 +103,10 @@ Node *_shmseg_alloc( key_t key, int size, int flags, int is_top_node ) {
 		node->shminfo->data_chunks   = 0;
 		node->shminfo->data_serial   = 1;
 		node->shminfo->data_length   = 0;
-		node->shminfo->nrefs         = 1;
+		node->shminfo->nrefs         = 0;
 
 		if ( key != IPC_PRIVATE )
-			node->shminfo->nrefs = 2;
+			node->shminfo->nrefs = 1;
 
 	}
 
