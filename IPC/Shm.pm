@@ -45,6 +45,12 @@ Blessed references might work but are untested.
 Lexical variables are treated as anonymous, and are supported. They will only
 outlive the process if another shared variable contains a reference to it.
 
+=head1 CURRENT STATUS
+
+This is alpha code. There are no doubt many bugs.
+
+In particular, the multiple simultaneous process use case has not been tested.
+
 =cut
 
 ###############################################################################
