@@ -16,7 +16,7 @@ WriteMakefile(
 	Storable		=> 0,
 	UNIVERSAL		=> 0,
 	'Class::Attrib'		=> 1.06,
-	'IPC::Shm::Simple'	=> 1.05,
+	'IPC::Shm::Simple'	=> 1.06,
 	'Scalar::Util'		=> 0,
     },
 
