@@ -112,7 +112,7 @@ to remove named variables other than manually removing ALL IPC::Shm segments.
 
 use Attribute::Handlers;
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
 
 ###############################################################################
