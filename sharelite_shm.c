@@ -264,3 +264,13 @@ int _sharelite_shm_remove( Share *share, Node *last ) {
 	return 0;
 }
 
+/* get the number of active connections             */
+int _sharelite_shm_nconns( Share *share ) {
+	struct shmid_ds buf;
+
+	if ( shmctl( share->shmid, IPC_STAT, &buf ) == -1 )
+		return -1;
+
+	return (int) buf.shm_nattch;
+}
+

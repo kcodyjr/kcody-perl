@@ -433,8 +433,12 @@ sub chunk_seg_size($;$) {
 	return sharelite_chunk_seg_size( shift->{share}, @_ );
 }
 
-sub nrefs($;$) {
-	return sharelite_nrefs( shift->{share}, @_ );
+sub nconns($) {
+	return sharelite_nconns( shift->{share} );
+}
+
+sub nrefs($) {
+	return sharelite_nrefs( shift->{share} );
 }
 
 sub incref($;$) {

@@ -137,6 +137,8 @@ int	 sharelite_serial(Share *share);
 int	 sharelite_nsegments(Share *share);
 /* report the size of the top segment */
 int	 sharelite_top_seg_size(Share *share);
+/* report the number of active connections */
+int	 sharelite_nconns(Share *share);
 /* report the number of counted references */
 int	 sharelite_nrefs(Share *share);
 /* increment the reference counter */

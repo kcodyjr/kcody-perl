@@ -43,6 +43,10 @@ int _sharelite_shm_forget( Share *share, Node *last );
  * or when the whole share is being deallocated        */
 int _sharelite_shm_remove( Share *share, Node *last );
 
+/* retrieve the number of active connections           *
+ * implemented using the shmctl call                   */
+int _sharelite_shm_nconns( Share *share );
+
 
 #endif /* define __SHARELITE_SHM_H__ */
 
