@@ -9,7 +9,7 @@ use Test::More tests => 9;
 
 my ( $obj, $tmp );
 
-our $variable : Shm;
+our $variable : shm;
 
 ok( $obj = tied( $variable ), "retrieving object" );
 
