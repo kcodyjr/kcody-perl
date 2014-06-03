@@ -33,17 +33,27 @@ The "shm" variable attribute confers two properties:
 
 =back
 
-Scalars, hashes, and arrays are supported.
+Scalars, hashes, and arrays are supported. Filehandles and code are not.
 
 Storing references is legal; however, the target of the reference will itself
 be moved into its own anonymous shared memory segment with contents preserved.
+That is to say, the original variable the reference points at gets tied, and
+its contents restored. Thus, any other Perlish reference copying will behave
+as expected.
 
 Blessed references might work but are untested.
 
 =head1 LEXICALS
 
+ use IPC::Shm;
+ my $lexical1 : shm;
+ my $lexical2 : shm = 'foo';
+
 Lexical variables are treated as anonymous, and are supported. They will only
 outlive the process if another shared variable contains a reference to it.
+They will be visible to child processes, and clean themselves from the system
+when the variable has gone out of scope in all connected processes. Usually,
+that means when the parent and all children have died.
 
 =head1 LOCKING
 
@@ -51,16 +61,24 @@ If you need the state of the variable to remain unchanged between two
 or more operations, the calling program should assert a lock thus:
 
  my $obj = tied %variable;
- $obj->writelock; # or readlock, if no changes will be made
+ my $locked = $obj->writelock; # or readlock, if no changes will be made
 
  $variable{foo} = "bar";
  $variable{bar} = $variable{foo};
 
- $obj->unlock;    # don't forget
+ $obj->unlock if $locked;      # don't forget
+
+If a lock is already held by another process, newer locks will block and
+wait. However, if the same process is asking for the same lock, it will
+return zero. This allows pseudo nested locking.
 
 To summarize the locking behavior, reads are prohibited while a
 writelock is in effect (and only one writelock may be held), and
 writes are prohibited while one or more readlocks are in effect.
+
+If the process exits, any held locks are released, assuming the
+exit was sufficiently clean to allow destructors to run. Something
+more severe, such as a segmentation fault, would leave stale locks.
 
 =head1 CACHING
 
@@ -77,7 +95,17 @@ array, or hash. At the lowest level, a C implementation just sees the
 serialized string. Updates can be considered atomic as reads are locked
 out during writes, and vice versa, using a SysV semaphore array.
 
-=head1 SEGMENTS AND SEMAPHORES
+=head1 PERMISSIONS
+
+SysV shared memory segments have only a user ownership. The group bits
+of its UNIX permissions refer to the owner's primary group.
+
+Currently, all users see the same shared memory namespace. This may
+change in future versions.
+
+See below for how to influence the permission bits.
+
+=head1 IMPLEMENTATION DETAILS
 
 One SysV shared memory segment and one SysV semaphore array for locking
 are created for each Perl variable, named or anonymous.
@@ -95,6 +123,14 @@ are created:
         IPC::Shm::Tied->Size( 8192 );
         IPC::Shm::Tied->Mode( 0600 );
  }
+
+Storable freeze() and thaw() are used for serialization and deserialization,
+respectively.
+
+Variables are mapped using a hash table. When the next process starts,
+it attaches to that first hash table using a four byte IPCKEY. All
+other variables are mentioned directly or indirectly in that table,
+allowing transparent reconnection.
 
 =head1 CURRENT STATUS
 
