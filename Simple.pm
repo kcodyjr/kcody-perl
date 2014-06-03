@@ -53,7 +53,7 @@ use UNIVERSAL;
 
 use vars qw( $VERSION @ISA %Attrib );
 
-$VERSION = '1.05';
+$VERSION = '1.06';
 @ISA     = qw( Class::Attrib DynaLoader );
 %Attrib  = (
 	Mode		=> 0660,
