@@ -92,4 +92,11 @@ sub CLEAR {
 }
 
 
+
+=head1 AUTHOR
+
+Kevin Cody-Little <kcody@cpan.org>
+
+=cut
+
 1;

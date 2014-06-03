@@ -100,7 +100,7 @@ must be implemented by inheriting classes.
 
 =head1 SERIALIZE/DESERIALIZE
 
-=head2 FRESH
+=head2 $this->FRESH
 
 Called by IPC::Shm::Simple->fetch when a new value is
 actually read in from shared memory. The deserializing
@@ -334,4 +334,11 @@ sub flush {
 
 ###############################################################################
 ###############################################################################
+
+=head1 AUTHOR
+
+Kevin Cody-Little <kcody@cpan.org>
+
+=cut
+
 1;
