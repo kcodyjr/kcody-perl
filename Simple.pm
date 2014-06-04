@@ -75,6 +75,8 @@ Returns blessed reference on success, undef on failure.
 
 Throws an exception on invalid parameters.
 
+The segment will be unlocked even if it was just created.
+
 =cut
 
 sub bind($$) {
@@ -193,6 +195,8 @@ The optional parameters segsize and permissions default to C<< $this->Size() >>
 and C<< $this->Mode() >>, respectively.
 
 Returns blessed reference on success, undef on failure.
+
+The segment will automatically have a writelock in effect.
 
 =cut
 
