@@ -480,9 +480,13 @@ Entirely removes the cache entry for the object.
 
 =head2 $self->fetch();
 
-Fetch a previously stored value. If a subclass defines a C<FRESH> method,
-it will be called only when the shared memory value is changed by another
-process. If nothing has been stored yet, C<''> (the empty string) is returned.
+Fetch a previously stored value.
+
+If nothing has been stored yet, C<''> (the empty string) is returned.
+
+=head2 $self->FRESH();
+
+Invoked by C< fetch() > when the data has been changed by another process.
 
 =cut
 

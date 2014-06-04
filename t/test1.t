@@ -5,7 +5,7 @@
 
 use strict;
 
-use Test::More tests => 28;
+use Test::More tests => 31;
 
 use Fcntl qw( :flock );
 use IPC::Shm::Simple;
@@ -16,7 +16,7 @@ use vars qw( $KEY $pid $val );
 # key, the first set of tests will fail, and the script will die()
 $KEY = 192; 
 
-my ( $share, $result );
+my ( $share );
 
 # Test object construction
 ok( $share = IPC::Shm::Simple->create($KEY, 256, 0660), 'create key=192' );
@@ -124,4 +124,13 @@ ok( $share->remove(), 'remove segment from the system' );
 # cause undefine - test returns true to prove the script is still running
 undef $share;
 ok( 1, '... undefine to trigger destructor' );
+
+# recreate the keyed seg for the next script
+ok( $share = IPC::Shm::Simple->create($KEY, 256, 0660), 'create key=192' );
+
+# set a value upon it
+ok( $share->store( '7836' ), '... set a value' );
+
+# verify that value (redundant/pedantic)
+is( $share->fetch, '7836', '... confirm the value' );
 
