@@ -1,5 +1,5 @@
-bin/ipcdone.sh
-bin/test.pl
+bin/ipcwipe.sh
+bin/perlshm-cleanup
 IPC/Shm.pm
 IPC/Shm/Make.pm
 IPC/Shm/Segment.pm

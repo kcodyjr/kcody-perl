@@ -8,10 +8,5 @@ The variable by that name in that package will always have the same
 contents in any process, and will persist beyond the processes'
 lifetimes.
 
-Lexicals are supported, but since they are by definition unlocatable
-without being supplied a reference, they will be garbage collected
-when the program exits unless another shared memory variable has
-a reference to it. (TODO).
-
-Currently, scalars and hashes are supported, with arrays to follow.
+See https://metacpan.org/release/IPC-Shm
 
