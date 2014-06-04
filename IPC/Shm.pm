@@ -249,6 +249,13 @@ sub UNIVERSAL::shm : ATTR(ANY) {
 
 }
 
+###############################################################################
+# alias to avoid warnings during make test
+
+sub UNIVERSAL::Shm : ATTR(ANY) {
+	UNIVERSAL::shm(@_);
+}
+
 
 ###############################################################################
 # late library dependencies - after the above compiles
@@ -260,9 +267,9 @@ use IPC::Shm::Tied;
 ###############################################################################
 # shared memory variables used by this package
 
-our %NAMEVARS : shm;
-our %ANONVARS : shm;
-our %ANONTYPE : shm;
+our %NAMEVARS : Shm;
+our %ANONVARS : Shm;
+our %ANONTYPE : Shm;
 
 
 ###############################################################################
