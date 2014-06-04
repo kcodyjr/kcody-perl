@@ -1,37 +1,51 @@
 #!/usr/bin/perl
 use warnings;
 use strict;
-use lib '..';
+
+use Test::More tests => 17;
 
 use IPC::Shm;
 
-use Test::More tests => 9;
+# EXERCISE SCALARS
 
+our $variable : Shm;
 my ( $obj, $tmp );
 
-our $variable : shm;
+ok( $obj = tied( $variable ),		"retrieving object" );
+ok( $obj->CLEAR,			"clearing \$variable" );
+is( $variable, undef,			"\$variable == undef" );
 
-ok( $obj = tied( $variable ), "retrieving object" );
+ok( $variable = 'onetwothree',		"\$variable = 'onetwothree'" );
+is( $variable, 'onetwothree',		"\$variable == 'onetwothree'" );
 
-$obj->CLEAR;
+ok( $variable = { foo => 'bar' },	"\$variable = { foo => 'bar' }" );
+is( $variable->{foo}, "bar",		"\$variable->{foo} == 'bar'" );
 
-is( $variable, undef, "variable contains undef" );
+ok( $tmp = { foo => 'bam' },		"\$tmp = { foo => 'bam' }" );
+ok( $variable = $tmp,			"\$variable = \$tmp" );
+is( $variable->{foo}, 'bam',		"\$variable->{foo} == 'bam'" );
 
-ok( $variable = 'onetwothree', "assigning string value" );
+ok( $tmp->{foo} = 'bat',		"\$tmp->{foo} = 'bat'" );
+is( $variable->{foo}, 'bat',		"\$variable->{foo} == 'bat'" );
 
-is( $variable, 'onetwothree', "\$variable == 'onetwothree'" );
+ok( $variable->{foo} = 'bar',		"\$variable->{foo} = 'bar'" );
+is( $tmp->{foo}, 'bar',			"\$tmp->{foo} == 'bar'" );
 
-ok( $variable = { foo => 'bar' }, "assigning anonymous hash" );
+# EXERCISE LEXICALS
 
-is( $variable->{foo}, "bar", "\$variable->{foo} == 'bar'" );
+my $lexical : Shm;
 
-$tmp = { foo => 'bam' };
+is( $lexical, undef,			"\$lexical == undef" );
+ok( $lexical = 'fourfivesix',		"\$lexical = 'fourfivesix'" );
+is( $lexical, 'fourfivesix',		"\$lexical == 'fourfivesix'" );
 
-ok( $variable = $tmp );
 
-is( $variable->{foo}, 'bam', "\$variable->{foo} == 'bam'" );
+# EXERCISE ARRAYS
 
-$tmp->{foo} = 'bat';
+#our @variable : Shm;
 
-is( $variable->{foo}, 'bat', "\$variable->{foo} == 'bat'" );
+# EXERCISE HASHES
+
+#our %variable : Shm;
+
 
