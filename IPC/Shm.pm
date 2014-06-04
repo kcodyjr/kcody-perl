@@ -105,6 +105,16 @@ change in future versions.
 
 See below for how to influence the permission bits.
 
+=head1 CLEANING UP
+
+If you wish to remove all IPC::Shm segments from the system, do this:
+
+ use IPC::Shm;
+ IPC::Shm->cleanup;
+
+Accessing shared variables is not valid after calling this, so you
+should probably only call it from an END block.
+
 =head1 IMPLEMENTATION DETAILS
 
 One SysV shared memory segment and one SysV semaphore array for locking
@@ -138,8 +148,8 @@ This is alpha code. There are no doubt many bugs.
 
 In particular, the multiple simultaneous process use case has not been tested.
 
-Also, the garbage collection is primitive, and there is not yet a safe way
-to remove named variables other than manually removing ALL IPC::Shm segments.
+Also, the garbage collection is a bit tenative, and removing named segments
+causes them to be cleared immediately rather than during global destruction.
 
 =cut
 
@@ -270,6 +280,30 @@ use IPC::Shm::Tied;
 our %NAMEVARS : Shm;
 our %ANONVARS : Shm;
 our %ANONTYPE : Shm;
+
+
+###############################################################################
+# global cleanup routine
+
+sub cleanup {
+
+	foreach my $vanon ( keys %ANONVARS ) {
+		my $shmid = $ANONVARS{$vanon};
+		my $share = IPC::Shm::Segment->shmat( $shmid );
+		   $share->remove;
+	}
+
+	foreach my $vname ( keys %NAMEVARS ) {
+		next if $vname eq '%IPC::Shm::NAMEVARS';
+		my $shmid = $NAMEVARS{$vname};
+		my $share = IPC::Shm::Segment->shmat( $shmid );
+		   $share->remove;
+	}
+
+	my $obj = tied %NAMEVARS;
+	$obj->remove;
+
+}
 
 
 ###############################################################################

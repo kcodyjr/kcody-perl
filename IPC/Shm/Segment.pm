@@ -270,18 +270,19 @@ sub remove {
 sub DETACH {
 	my ( $this ) = @_;
 
-	unless ( $this->nrefs ) {
+	unless ( $this->nrefs or $this->varname ) {
+
+		my $vanon = $this->varanon;
 
 		$this->writelock;
 
 		if ( $this->nconns == 1 ) {
 
-			if ( my $vanon = $this->varanon ) {
-				$this->CLEAR;
-				$this->remove;
-				delete $IPC::Shm::ANONVARS{$vanon};
-				delete $IPC::Shm::ANONTYPE{$vanon};
-			}
+			$this->CLEAR;
+			$this->SUPER::remove;
+
+			delete $IPC::Shm::ANONVARS{$vanon};
+			delete $IPC::Shm::ANONTYPE{$vanon};
 
 		}
 
