@@ -11,3 +11,4 @@ sharelite_shm.h
 sharelite_shm.c
 typemap
 t/test1.t
+t/test2.t
