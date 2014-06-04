@@ -4,11 +4,11 @@ use ExtUtils::MakeMaker;
 # the contents of the Makefile that is written.
 WriteMakefile(
     NAME			=> 'IPC::Shm',
-    ABSTRACT			=> 'Store variables in SysV shared memory',
     AUTHOR			=> 'Kevin Cody-Little <kcodyjr@gmail.com>',
     LICENSE			=> 'perl',
 
     VERSION_FROM		=> 'IPC/Shm.pm', # finds $VERSION
+    ABSTRACT_FROM		=> 'IPC/Shm.pm',
     PERL_MALLOC_OK		=> 1,
 
     PREREQ_PM			=> {
