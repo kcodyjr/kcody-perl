@@ -102,7 +102,7 @@ sub STORESIZE {
 
 	$this->unlock;
 
-	return;
+	return 1;
 }
 
 sub EXTEND {
@@ -110,7 +110,7 @@ sub EXTEND {
 
 	$this->STORESIZE( $count );
 
-	return;
+	return 1;
 }
 
 sub EXISTS {
@@ -128,7 +128,7 @@ sub DELETE {
 
 	$this->STORE( $index, undef );
 
-	return;
+	return 1;
 }
 
 sub CLEAR {
@@ -148,7 +148,7 @@ sub CLEAR {
 		$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 	}
 
-	return;
+	return 1;
 }
 
 sub PUSH {
@@ -168,7 +168,7 @@ sub PUSH {
 
 	$this->unlock if $locked;
 
-	return;
+	return 1;
 }
 
 sub POP {
@@ -234,7 +234,7 @@ sub UNSHIFT {
 
 	$this->unlock if $locked;
 
-	return;
+	return 1;
 }
 
 # better this doesn't exist, until i get around to implementing it

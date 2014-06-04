@@ -87,7 +87,7 @@ sub DELETE {
 
 	$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 
-	return;
+	return 1;
 }
 
 sub CLEAR {
@@ -107,7 +107,7 @@ sub CLEAR {
 		$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 	}
 
-	return;
+	return 1;
 }
 
 sub EXISTS {
@@ -140,7 +140,7 @@ sub FIRSTKEY {
 
 	}
 
-	return unless $first;
+	return unless defined $first;
 
 	$index{$last} = undef if $last;
 
@@ -152,7 +152,11 @@ sub FIRSTKEY {
 sub NEXTKEY {
 	my ( $this, $lastkey ) = @_;
 
-	return $this->{icache}->{$lastkey};
+	my $icache = $this->{icache};
+
+	return unless defined $icache->{$lastkey};
+
+	return $icache->{$lastkey};
 }
 
 sub SCALAR {

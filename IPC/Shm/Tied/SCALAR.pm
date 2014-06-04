@@ -89,6 +89,7 @@ sub CLEAR {
 
 	$this->standin_discard( $oldval ) if ( $oldval and ref( $oldval ) );
 
+	return 1;
 }
 
 
