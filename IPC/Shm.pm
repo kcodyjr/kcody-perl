@@ -41,7 +41,7 @@ That is to say, the original variable the reference points at gets tied, and
 its contents restored. Thus, any other Perlish reference copying will behave
 as expected.
 
-Blessed references might work but are untested.
+Blessed references might work but are entirely untested.
 
 =head1 LEXICALS
 
@@ -148,7 +148,7 @@ to remove named variables other than manually removing ALL IPC::Shm segments.
 
 use Attribute::Handlers;
 
-our $VERSION = '0.31';
+our $VERSION = '0.32';
 
 
 ###############################################################################
