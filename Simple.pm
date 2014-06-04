@@ -383,6 +383,10 @@ Returns the size of data chunk segments, in bytes.
 Changes the size of chunk data segments. The share must have only one
 allocated segment (the top segment) for this call to succeed.
 
+=head2 $self->nconns();
+
+Reports the number of processes connected to the share.
+
 =head2 $self->nrefs();
 
 Returns the current shared reference count.

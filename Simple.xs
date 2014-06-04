@@ -149,6 +149,10 @@ sharelite_chunk_seg_size(share,size)
 	int		size
 
 int
+sharelite_nconns(share)
+	Share*		share
+
+int
 sharelite_nrefs(share)
 	Share*		share
 

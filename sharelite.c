@@ -501,13 +501,10 @@ int sharelite_chunk_seg_size( Share *share, int segsize ) {
 }
 
 int sharelite_nconns( Share *share ) {
-	int rv;
 
 	CALL_NEEDS_SHARE_AND_HEAD(-1);
 
-	rv = _sharelite_shm_nconns( share );
-
-	return rv;
+	return _sharelite_shm_nconns( share );
 }
 
 int sharelite_nrefs( Share *share ) {
