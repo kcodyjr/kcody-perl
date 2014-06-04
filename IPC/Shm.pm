@@ -23,7 +23,7 @@ Then, just use it like any other variable.
 
 =head1 EXPLANATION
 
-The "shm" variable attribute confers two properties:
+The "shm" variable attribute confers two properties to a package variable:
 
 =over
 
@@ -49,11 +49,21 @@ Blessed references might work but are entirely untested.
  my $lexical1 : shm;
  my $lexical2 : shm = 'foo';
 
-Lexical variables are treated as anonymous, and are supported. They will only
-outlive the process if another shared variable contains a reference to it.
-They will be visible to child processes, and clean themselves from the system
-when the variable has gone out of scope in all connected processes. Usually,
-that means when the parent and all children have died.
+Lexical variables are supported, and have slightly different semantics. The
+properties conferred by the "shm" attribute are:
+
+=over
+
+=item 1. The variable will only persist beyond the program's end if another
+shared variable contains a reference to it.
+
+=item 2. The parent and all children will see the same value. Unrelated programs
+only have access if a reference is stored via some shared package variable.
+
+=item 3. They will automatically disappear from the system when all copies have
+gone out of scope and no reference exists in another shared variable.
+
+=back
 
 =head1 LOCKING
 
