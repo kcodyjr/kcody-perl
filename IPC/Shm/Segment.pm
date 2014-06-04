@@ -68,6 +68,10 @@ Retrieves a human-redable string identifying the variable.
 
 =head1 OVERRIDDES
 
+=head2 $this->remove
+
+Overridden from IPC::Shm::Simple to remove table entries for named variables.
+
 =head2 $this->DETACH
 
 Called by IPC::Shm::Simple when the last in-process instance
@@ -245,6 +249,22 @@ sub vartype {
 
 
 ###############################################################################
+# deliberate removal override
+
+sub remove {
+	my ( $this ) = @_;
+
+	if ( my $vname = $this->varname ) {
+		delete $IPC::Shm::NAMEVARS{$vname};
+		$this->decref;
+		$this->CLEAR;
+	}
+
+	return $this->SUPER::remove();
+}
+
+
+###############################################################################
 # disconnect-time cleanups
 
 sub DETACH {
@@ -254,18 +274,15 @@ sub DETACH {
 
 		$this->writelock;
 
-		my $nconns = $this->nconns;
-
 		if ( $this->nconns == 1 ) {
 
-			$this->CLEAR;
-			$this->remove;
-
 			if ( my $vanon = $this->varanon ) {
+				$this->CLEAR;
+				$this->remove;
 				delete $IPC::Shm::ANONVARS{$vanon};
 				delete $IPC::Shm::ANONTYPE{$vanon};
 			}
-		
+
 		}
 
 	}
