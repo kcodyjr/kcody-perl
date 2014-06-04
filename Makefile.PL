@@ -24,7 +24,7 @@ WriteMakefile(
 	DynaLoader	=> 0,
 	Fcntl		=> 0,
 	UNIVERSAL	=> 0,
-	'Class::Attrib'	=> '1.05',
+	'Class::Attrib'	=> '1.06',
 	'IPC::SysV'	=> 0,
     },
 
