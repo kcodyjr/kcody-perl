@@ -311,8 +311,9 @@ sub remove($) {
 sub DESTROY($) {
 	my ( $self ) = @_;
 
-	my $shmid = $self->{shmid}
-		or return; # FIXME squawk
+	my $shmid = $self->{shmid};
+
+	return unless defined $shmid; # FIXME: squawk
 
 	$ShmCount{$shmid}--;
 
@@ -340,8 +341,9 @@ sub DETACH {
 
 	$self->scache_clean;
 
-	my $shmid = $self->{shmid}
-		or return; # FIXME squawk
+	my $shmid = $self->{shmid};
+
+	return unless defined $shmid; # FIXME: squawk
 
 	my $share = $self->{share}
 		or return; # FIXME squawk
