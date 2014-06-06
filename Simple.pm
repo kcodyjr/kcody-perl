@@ -50,7 +50,7 @@ use vars qw( $VERSION @ISA %Attrib );
 $VERSION = '1.09';
 @ISA     = qw( Class::Attrib DynaLoader );
 %Attrib  = (
-	Mode		=> 0660,
+	Mode		=> oct( 660 ),
 	Size		=> 4096,
 	dwell		=> 0,
 	verify		=> 1
@@ -79,14 +79,14 @@ The segment will be unlocked even if it was just created.
 
 =cut
 
-sub bind($$) {
+sub bind {
 	my ( $this, $ipckey, $size, $mode ) = @_;
 	my ( $self );
 
 	unless ( $self = $this->attach( $ipckey ) ) {
 
 		$self = $this->create( $ipckey, $size, $mode )
-			or return undef;
+			or return;
 
 		$self->unlock;
 
@@ -110,7 +110,7 @@ Throws an exception on invalid parameters.
 
 =cut
 
-sub attach($$) {
+sub attach {
 	my ( $this, $ipckey ) = @_;
 
 	confess( __PACKAGE__ . "->attach: Called without ipckey." )
@@ -132,7 +132,7 @@ sub attach($$) {
 		unless ( $share ) {
 			carp __PACKAGE__ . "->attach: dangling ShmIndex";
 			delete $ShmIndex{$ipckey};
-			return undef;
+			return;
 		}
 
 		bless my $self = {}, $class;
@@ -150,19 +150,19 @@ sub attach($$) {
 		delete $ShmShare{$shmid};
 		delete $ShmIndex{$ipckey};
 
-		return undef;
+		return;
 	}
 
 	my $share = sharelite_attach( $ipckey );
 
-	return undef unless $share; # no carp, $! is set
+	return unless $share; # no carp, $! is set
 
 	my $shmid = sharelite_shmid( $share );
 
 	unless ( defined $shmid ) {
 		carp "sharelite_shmid returned undef";
 		sharelite_shmdt( $share );
-		return undef;
+		return;
 	}
 
 	bless my $self = {}, $class;
@@ -171,7 +171,7 @@ sub attach($$) {
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->ATTACH()
-		or return undef;
+		or return;
 
 	# save the attached object in the cache
 	$ShmIndex{$ipckey} = $shmid;
@@ -192,7 +192,7 @@ Does nothing on its own; this is meant for subclasses to override.
 
 =cut
 
-sub ATTACH($) {
+sub ATTACH {
 	my ( $self ) = @_;
 
 	return 1;
@@ -213,7 +213,7 @@ The segment will automatically have a writelock in effect.
 
 =cut
 
-sub create($;$) {
+sub create {
 	my ( $this, $ipckey, $size, $mode ) = @_;
 
 	$ipckey ||= IPC_PRIVATE;
@@ -224,7 +224,7 @@ sub create($;$) {
 
 	my $share = sharelite_create( $ipckey, $size, $mode );
 
-	return undef unless $share; # no carp, $! is set
+	return unless $share; # no carp, $! is set
 
 	my $shmid = sharelite_shmid( $share );
 
@@ -232,7 +232,7 @@ sub create($;$) {
 		carp "sharelite_shmid returned undef";
 		sharelite_remove( $share );
 		sharelite_shmdt( $share );
-		return undef;
+		return;
 	}
 
 	bless my $self = {}, $class;
@@ -252,7 +252,7 @@ Attach to an existing shared memory segment by its shmid.
 
 =cut
 
-sub shmat($$) {
+sub shmat {
 	my ( $this, $shmid ) = @_;
 
 	confess( __PACKAGE__ . "->shmat: Called without shmid." )
@@ -279,12 +279,12 @@ sub shmat($$) {
 		delete $ShmCount{$shmid};
 		delete $ShmShare{$shmid};
 
-		return undef;
+		return;
 	}
 
 	my $share = sharelite_shmat( $shmid );
 
-	return undef unless $share; # no carp, $! is set
+	return unless $share; # no carp, $! is set
 
 	bless my $self = {}, $class;
 	$self->{share} = $share;
@@ -292,7 +292,7 @@ sub shmat($$) {
 
 	# inform subclasses that an uncached attachment has occurred
 	$self->ATTACH()
-		or return undef;
+		or return;
 
 	# save the attached object in the cache
 	$ShmShare{$shmid} = $share;
@@ -312,7 +312,7 @@ Returns 1 on success, undef on failure.
 
 =cut
 
-sub remove($) {
+sub remove {
 	my ( $self ) = @_;
 	my ( $share, $shmid, $ipckey );
 
@@ -320,7 +320,7 @@ sub remove($) {
 
 	unless ( $share ) {
 		carp "undefined share during remove";
-		return undef;
+		return;
 	}
 
 	return ( sharelite_remove( $share ) == -1 ) ? undef : 1;
@@ -328,7 +328,7 @@ sub remove($) {
 
 # when the object is destroyed, the sharelite object must be too
 # otherwise segment removal (and even removal marking) would never occur
-sub DESTROY($) {
+sub DESTROY {
 	my ( $self ) = @_;
 
 	my $shmid = $self->{shmid};
@@ -445,55 +445,55 @@ Decrements the shared reference counter.
 
 =cut
 
-sub key($) {
+sub key {
 	return sharelite_key( shift->{share} );
 }
 
-sub shmid($) {
+sub shmid {
 	return sharelite_shmid( shift->{share} );
 }
 
-sub flags($) {
+sub flags {
 	return sharelite_flags( shift->{share} );
 }
 
-sub length($) {
+sub length {
 	return sharelite_length( shift->{share} );
 }
 
-sub serial($) {
+sub serial {
 	return sharelite_serial( shift->{share} );
 }
 
-sub is_valid($) {
+sub is_valid {
 	return sharelite_is_valid( shift->{share} );
 }
 
-sub nsegments($) {
+sub nsegments {
 	return sharelite_nsegments( shift->{share} );
 }
 
-sub top_seg_size($) {
+sub top_seg_size {
 	return sharelite_top_seg_size( shift->{share} );
 }
 
-sub chunk_seg_size($;$) {
+sub chunk_seg_size {
 	return sharelite_chunk_seg_size( shift->{share}, @_ );
 }
 
-sub nconns($) {
+sub nconns {
 	return sharelite_nconns( shift->{share} );
 }
 
-sub nrefs($) {
+sub nrefs {
 	return sharelite_nrefs( shift->{share} );
 }
 
-sub incref($;$) {
+sub incref {
 	return sharelite_incref( shift->{share}, @_ );
 }
 
-sub decref($;$) {
+sub decref {
 	return sharelite_decref( shift->{share}, @_ );
 }
 
@@ -529,14 +529,14 @@ my %ShmCache = ();		# cache key=shmid  value={}
 				#			serial = integer
 				#			sstamp = timestamp
 
-sub scache($) {
+sub scache {
 	my $self = shift;
 
 	my $shmid = $self->{shmid};
 
 	unless ( defined $shmid ) {
 		carp "undefined shmid during scache retrieval";
-		return undef;
+		return;
 	}
 
 	my $cache = $ShmCache{$shmid} ||= {};
@@ -546,14 +546,14 @@ sub scache($) {
 	return \($cache->{scache});
 }
 
-sub scache_clean($) {
+sub scache_clean {
 	my $self = shift;
 
 	delete $ShmCache{$self->{shmid}};
 
 }
 
-sub fetch($) {
+sub fetch {
 	my $self = shift;
 
 	carp(  __PACKAGE__ . "->fetch: Called without at least shared lock!" )
@@ -563,14 +563,14 @@ sub fetch($) {
 
 	unless ( $share ) {
 		carp "undefined share during fetch";
-		return undef;
+		return;
 	}
 
 	my $shmid = $self->{shmid};
 
 	unless ( defined $shmid ) {
 		carp "undefined shmid during fetch";
-		return undef;
+		return;
 	}
 
 	my $cache = $ShmCache{$shmid} ||= {};
@@ -618,7 +618,7 @@ Stores a string or numeric value in the shared memory segment.
 
 =cut
 
-sub store($$) {
+sub store {
 	my $self = shift;
 
 	carp(  __PACKAGE__ . "->store: Called without exclusive lock!" )
@@ -628,14 +628,14 @@ sub store($$) {
 
 	unless ( $share ) {
 		carp "undefined share during store";
-		return undef;
+		return;
 	}
 
 	my $shmid = $self->{shmid};
 
 	unless ( $shmid ) {
 		carp "undefined shmid during store";
-		return undef;
+		return;
 	}
 
 	my $cache = $ShmCache{$shmid} ||= {};
@@ -672,18 +672,18 @@ sub store($$) {
 ### Object Lock Methods - Class::Lockable friendly
 ###
 
-sub lock($$) {
+sub lock {
 	return shift->_lock( @_ );
 }
 
-sub _lock($$) {
+sub _lock {
 	my ( $self, $flag ) = @_;
 
 	my $share = $self->{share};
 
 	unless ( $share ) {
 		carp "undefined share during _lock";
-		return undef;
+		return;
 	}
 
 	# short circuit if already locked as requested
@@ -693,31 +693,31 @@ sub _lock($$) {
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_lock: $!" );
-		return undef;
+		return;
 	}
 
 	return $rc == 0;
 }
 
-sub locked($$) {
+sub locked {
 	return shift->_locked( @_ );
 }
 
-sub _locked($$) {
+sub _locked {
 	my ( $self, $flag ) = @_;
 
 	my $share = $self->{share};
 
 	unless ( $share ) {
 		carp "undefined share during _locked";
-		return undef;
+		return;
 	}
 
 	my $rc = sharelite_locked( $share, $flag );
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_locked: $!" );
-		return undef;
+		return;
 	}
 
 	return $rc != 0;
@@ -728,15 +728,15 @@ sub _locked($$) {
 ### Higher Level Lock Methods
 ###
 
-sub unlock($) {
+sub unlock {
 	return shift->_lock( LOCK_UN );
 }
 
-sub readlock($) {
+sub readlock {
 	return shift->_lock( LOCK_SH );
 }
 
-sub writelock($) {
+sub writelock {
 	return shift->_lock( LOCK_EX );
 }
 
