@@ -17,7 +17,7 @@ WriteMakefile(
 	UNIVERSAL		=> 0,
 	'Class::Attrib'		=> 1.06,
 	'Digest::SHA1'		=> 0,
-	'IPC::Shm::Simple'	=> 1.09,
+	'IPC::Shm::Simple'	=> 1.10,
 	'Scalar::Util'		=> 0,
     },
 
