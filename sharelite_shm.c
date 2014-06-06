@@ -57,7 +57,8 @@ int _shmseg_shmdt( Node *node, int remove ) {
 		node->shminfo->data_chunks--;
 
 		if ( shmctl( node->shmid, IPC_RMID, NULL ) == -1 )
-			return -1;
+			if ( shmctl( node->shmid, IPC_RMID, NULL ) == -1 )
+				return -1;
 
 	}
 
