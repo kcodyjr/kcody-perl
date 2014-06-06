@@ -223,8 +223,10 @@ sub tiedref {
 		return $newval;
 	}
 
+	my $tv; # silence perlcritic by declaring before conditional
+
 	# keep a temporary reference to the end of this sub
-	my $tv = $this->retie unless defined $TiedRef{$shmid};
+	$tv = $this->retie unless defined $TiedRef{$shmid};
 
 	return $TiedRef{$shmid};
 }
