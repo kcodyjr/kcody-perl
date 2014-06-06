@@ -155,10 +155,7 @@ sub attach($$) {
 
 	my $share = sharelite_attach( $ipckey );
 
-	unless ( $share ) {
-		carp "sharelite_attach returned undef";
-		return undef;
-	}
+	return undef unless $share; # no carp, $! is set
 
 	my $shmid = sharelite_shmid( $share );
 
@@ -227,10 +224,7 @@ sub create($;$) {
 
 	my $share = sharelite_create( $ipckey, $size, $mode );
 
-	unless ( $share ) {
-		carp "sharelite_create returned undef";
-		return undef;
-	}
+	return undef unless $share; # no carp, $! is set
 
 	my $shmid = sharelite_shmid( $share );
 
@@ -290,10 +284,7 @@ sub shmat($$) {
 
 	my $share = sharelite_shmat( $shmid );
 
-	unless ( $share ) {
-		carp "sharelite_shmat returned undef";
-		return undef;
-	}
+	return undef unless $share; # no carp, $! is set
 
 	bless my $self = {}, $class;
 	$self->{share} = $share;
