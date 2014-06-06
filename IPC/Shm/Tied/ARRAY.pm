@@ -181,7 +181,7 @@ sub POP {
 
 	unless ( scalar @{$vcache} ) {
 		$this->unlock if $locked;
-		return undef;
+		return;
 	}
 
 	my $rv = pop @{$vcache};
@@ -204,7 +204,7 @@ sub SHIFT {
 
 	unless ( scalar @{$vcache} ) {
 		$this->unlock if $locked;
-		return undef;
+		return;
 	}
 
 	my $rv = shift @{$vcache};

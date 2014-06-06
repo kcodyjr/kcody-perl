@@ -130,33 +130,33 @@ our %Attrib = (
 ###############################################################################
 # get the segment for a variable (by symbol), creating if needed
 
-sub named($$) {
+sub named {
 	my ( $class, $sym ) = @_;
 	my ( $rv );
 
 	unless ( $sym ) {
 		carp __PACKAGE__ . ' cannot cope with a null symbol name';
-		return undef;
+		return;
 	}
 
 	if ( $sym eq '%IPC::Shm::NAMEVARS' ) {
 		unless ( $rv = $class->bind( $IPCKEY ) ) {
 			carp "shmbind failed: $!";
-			return undef;
+			return;
 		}
 	}
 
 	elsif ( my $shmid = $IPC::Shm::NAMEVARS{$sym} ) {
 		unless ( $rv = $class->shmat( $shmid ) ) {
 			carp "shmattach failed: $!";
-			return undef;
+			return;
 		}
 	}
 
 	else {
 		unless ( $rv = $class->create ) {
 			carp "shmcreate failed: $!";
-			return undef;
+			return;
 		}
 		$rv->incref;
 		$rv->unlock;
@@ -180,12 +180,12 @@ sub anonymous {
 
 		unless ( $shmid = $IPC::Shm::ANONVARS{$aname} ) {
 			carp "no such anonymous segment $aname";
-			return undef;
+			return;
 		}
 
 		unless ( $rv = $class->shmat( $shmid ) ) {
 			carp "failed to attach to shmid $shmid: $!";
-			return undef;
+			return;
 		}
 
 	}
@@ -193,7 +193,7 @@ sub anonymous {
 	else {
 		unless ( $rv = $class->create ) {
 			carp "shmcreate failed: $!";
-			return undef;
+			return;
 		}
 
 		$rv->unlock;
@@ -312,7 +312,7 @@ sub standin {
 
 	else {
 		carp __PACKAGE__ . ' object has no identifier';
-		return undef;
+		return;
 	}
 
 }
@@ -366,7 +366,7 @@ sub standin_restand {
 
 	unless ( $shmid ) {
 		carp "could not get shmid for standin";
-		return undef;
+		return;
 	}
 
 	my $class = 'IPC::Shm::Tied::' . $callclass->standin_type( $standin );
@@ -375,7 +375,7 @@ sub standin_restand {
 
 	unless ( $rv ) {
 		carp "restand_obj shmat failed: $!\n";
-		return undef;
+		return;
 	}
 
 	$rv->varname( $standin->{varname} ) if $standin->{varname};

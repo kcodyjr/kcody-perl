@@ -174,7 +174,7 @@ our $VERSION = '0.34';
 ###############################################################################
 # argument normalizers
 
-sub _attrtie_normalize_data($) {
+sub _attrtie_normalize_data {
 	my ( $data ) = @_;
 
 	if ( not defined $data ) {
@@ -188,7 +188,7 @@ sub _attrtie_normalize_data($) {
 	return $data;
 }
 
-sub _attrtie_normalize_symbol($$) {
+sub _attrtie_normalize_symbol {
 	my ( $sym, $type ) = @_;
 
 	return $sym if $sym eq 'LEXICAL';
@@ -209,7 +209,7 @@ sub _attrtie_normalize_symbol($$) {
 ###############################################################################
 # sanity checks
 
-sub _attrtie_check_ref_sanity($) {
+sub _attrtie_check_ref_sanity {
 	my ( $ref ) = @_;
 
 	my $rv = ref( $ref )
