@@ -47,7 +47,7 @@ use UNIVERSAL;
 
 use vars qw( $VERSION @ISA %Attrib );
 
-$VERSION = '1.08';
+$VERSION = '1.09';
 @ISA     = qw( Class::Attrib DynaLoader );
 %Attrib  = (
 	Mode		=> 0660,
@@ -84,8 +84,12 @@ sub bind($$) {
 	my ( $self );
 
 	unless ( $self = $this->attach( $ipckey ) ) {
-		$self = $this->create( $ipckey, $size, $mode );
+
+		$self = $this->create( $ipckey, $size, $mode )
+			or return undef;
+
 		$self->unlock;
+
 	}
 
 	return $self;
@@ -126,7 +130,7 @@ sub attach($$) {
 	if ( my $shmid = $ShmIndex{$ipckey} ) {
 		my $share = $ShmShare{$shmid};
 		unless ( $share ) {
-			confess( __PACKAGE__ . "->attach: dangling ShmIndex" );
+			carp __PACKAGE__ . "->attach: dangling ShmIndex";
 			delete $ShmIndex{$ipckey};
 			return undef;
 		}
@@ -140,6 +144,8 @@ sub attach($$) {
 			return $self;
 		}
 
+		carp __PACKAGE__ . "->attach: got invalid cached object";
+
 		delete $ShmCount{$shmid};
 		delete $ShmShare{$shmid};
 		delete $ShmIndex{$ipckey};
@@ -147,10 +153,20 @@ sub attach($$) {
 		return undef;
 	}
 
-	my $share = sharelite_attach( $ipckey )
-		or return undef; # FIXME should we squawk?
+	my $share = sharelite_attach( $ipckey );
+
+	unless ( $share ) {
+		carp "sharelite_attach returned undef";
+		return undef;
+	}
 
 	my $shmid = sharelite_shmid( $share );
+
+	unless ( defined $shmid ) {
+		carp "sharelite_shmid returned undef";
+		sharelite_shmdt( $share );
+		return undef;
+	}
 
 	bless my $self = {}, $class;
 	$self->{share} = $share;
@@ -207,14 +223,23 @@ sub create($;$) {
 	$size   ||= $this->Size();
 	$mode   ||= $this->Mode();
 
-	# FIXME sanity checks?
-
 	my $class = ref( $this ) || $this;
 
-	my $share = sharelite_create( $ipckey, $size, $mode )
-		or return undef; # FIXME should we squawk?
+	my $share = sharelite_create( $ipckey, $size, $mode );
+
+	unless ( $share ) {
+		carp "sharelite_create returned undef";
+		return undef;
+	}
 
 	my $shmid = sharelite_shmid( $share );
+
+	unless ( defined $shmid ) {
+		carp "sharelite_shmid returned undef";
+		sharelite_remove( $share );
+		sharelite_shmdt( $share );
+		return undef;
+	}
 
 	bless my $self = {}, $class;
 	$self->{share} = $share;
@@ -239,12 +264,6 @@ sub shmat($$) {
 	confess( __PACKAGE__ . "->shmat: Called without shmid." )
 		unless defined $shmid;
 
-	confess( __PACKAGE__ . "->shmat: Called with empty shmid." )
-		unless $shmid;
-
-	confess( __PACKAGE__ . "->shmat: Called with string shmid." )
-		unless $shmid != 0;
-
 	confess( __PACKAGE__ . "->shmat: Called with invalid shmid." )
 		if $shmid == -1;
 
@@ -261,14 +280,20 @@ sub shmat($$) {
 			return $self;
 		}
 
+		carp __PACKAGE__ . "->shmat: got invalid cached object";
+
 		delete $ShmCount{$shmid};
 		delete $ShmShare{$shmid};
 
 		return undef;
 	}
 
-	my $share = sharelite_shmat( $shmid )
-		or return undef;
+	my $share = sharelite_shmat( $shmid );
+
+	unless ( $share ) {
+		carp "sharelite_shmat returned undef";
+		return undef;
+	}
 
 	bless my $self = {}, $class;
 	$self->{share} = $share;
@@ -300,8 +325,12 @@ sub remove($) {
 	my ( $self ) = @_;
 	my ( $share, $shmid, $ipckey );
 
-	$share  = $self->{share}
-		or return undef; # FIXME: squawk?
+	$share  = $self->{share};
+
+	unless ( $share ) {
+		carp "undefined share during remove";
+		return undef;
+	}
 
 	return ( sharelite_remove( $share ) == -1 ) ? undef : 1;
 }
@@ -313,7 +342,10 @@ sub DESTROY($) {
 
 	my $shmid = $self->{shmid};
 
-	return unless defined $shmid; # FIXME: squawk
+	unless ( defined $shmid ) {
+		carp "undefined shmid during DESTROY";
+		return;
+	}
 
 	$ShmCount{$shmid}--;
 
@@ -343,10 +375,17 @@ sub DETACH {
 
 	my $shmid = $self->{shmid};
 
-	return unless defined $shmid; # FIXME: squawk
+	unless ( defined $shmid ) {
+		carp "undefined shmid during DETACH";
+		return;
+	}
 
-	my $share = $self->{share}
-		or return; # FIXME squawk
+	my $share = $self->{share};
+
+	unless ( $share ) {
+		carp "undefined share during DETACH";
+		return;
+	}
 
 	my $ipckey = sharelite_key( $share );
 
@@ -502,7 +541,12 @@ my %ShmCache = ();		# cache key=shmid  value={}
 sub scache($) {
 	my $self = shift;
 
-	my $shmid = $self->{shmid}; # FIXME or squawk
+	my $shmid = $self->{shmid};
+
+	unless ( defined $shmid ) {
+		carp "undefined shmid during scache retrieval";
+		return undef;
+	}
 
 	my $cache = $ShmCache{$shmid} ||= {};
 
@@ -525,7 +569,19 @@ sub fetch($) {
 		if $self->_locked( LOCK_UN );
 
 	my $share = $self->{share};
+
+	unless ( $share ) {
+		carp "undefined share during fetch";
+		return undef;
+	}
+
 	my $shmid = $self->{shmid};
+
+	unless ( defined $shmid ) {
+		carp "undefined shmid during fetch";
+		return undef;
+	}
+
 	my $cache = $ShmCache{$shmid} ||= {};
 
 	# determine current shared memory value serial number
@@ -578,7 +634,20 @@ sub store($$) {
 		unless $self->_locked( LOCK_EX );
 
 	my $share = $self->{share};
-	my $cache = $ShmCache{$self->{shmid}} ||= {};
+
+	unless ( $share ) {
+		carp "undefined share during store";
+		return undef;
+	}
+
+	my $shmid = $self->{shmid};
+
+	unless ( $shmid ) {
+		carp "undefined shmid during store";
+		return undef;
+	}
+
+	my $cache = $ShmCache{$shmid} ||= {};
 
 	my $rc = sharelite_store( $share, $_[0], CORE::length( $_[0] ) );
 
@@ -619,10 +688,17 @@ sub lock($$) {
 sub _lock($$) {
 	my ( $self, $flag ) = @_;
 
-	# short circuit if already locked as requested
-	return 0 if sharelite_locked( $self->{share}, $flag );
+	my $share = $self->{share};
 
-	my $rc = sharelite_lock( $self->{share}, $flag );
+	unless ( $share ) {
+		carp "undefined share during _lock";
+		return undef;
+	}
+
+	# short circuit if already locked as requested
+	return 0 if sharelite_locked( $share, $flag );
+
+	my $rc = sharelite_lock( $share, $flag );
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_lock: $!" );
@@ -639,7 +715,14 @@ sub locked($$) {
 sub _locked($$) {
 	my ( $self, $flag ) = @_;
 
-	my $rc = sharelite_locked( $self->{share}, $flag );
+	my $share = $self->{share};
+
+	unless ( $share ) {
+		carp "undefined share during _locked";
+		return undef;
+	}
+
+	my $rc = sharelite_locked( $share, $flag );
 
 	if ( $rc == -1 ) {
 		carp( __PACKAGE__ . "->_locked: $!" );
