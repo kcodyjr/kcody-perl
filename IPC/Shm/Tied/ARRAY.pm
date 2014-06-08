@@ -189,9 +189,7 @@ sub POP {
 
 	$this->unlock if $locked;
 
-	# FIXME leaves a dangling reference
-
-	return ref( $rv ) ? getback( $rv ) : $rv;
+	return ref( $rv ) ? getback_discard( $rv ) : $rv;
 }
 
 sub SHIFT {
@@ -212,9 +210,7 @@ sub SHIFT {
 
 	$this->unlock if $locked;
 
-	# FIXME leaves a dangling reference
-
-	return $rv;
+	return ref( $rv ) ? getback_discard( $rv ) : $rv;
 }
 
 sub UNSHIFT {
@@ -237,11 +233,34 @@ sub UNSHIFT {
 	return 1;
 }
 
-# better this doesn't exist, until i get around to implementing it
-#sub SPLICE {
-#	my ( $this, $offset, $length, @list ) = @_;
-#
-#}
+sub SPLICE {
+	my ( $this, $offset, $length, @list ) = @_;
+
+	my $locked = $this->writelock;
+
+	$this->fetch;
+	my $vcache = $this->vcache;
+
+	my @newval = ();
+	foreach my $newval ( @list ) {
+		makeshm( \$newval );
+		push @newval, $newval;
+	}
+
+	my @oldval = splice( @{$vcache}, $offset, $length, @newval );
+
+	$this->flush;
+	$this->unlock if $locked;
+
+	my @retval = ();
+	foreach my $oldval ( @oldval ) {
+		push @retval, ref( $oldval )
+			    ? getback_discard( $oldval )
+			    : $oldval;
+	}
+
+	return wantarray ? @retval : pop( @retval );
+}
 
 
 

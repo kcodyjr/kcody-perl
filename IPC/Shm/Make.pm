@@ -165,6 +165,14 @@ sub getback {
 	return IPC::Shm::Tied->standin_tiedref( $standin );
 }
 
+sub getback_discard {
+	my ( $standin ) = @_;
+
+	my $this = IPC::Shm::Tied->standin_discard( $standin );
+
+	return $this->tiedref;
+}
+
 
 ###############################################################################
 ###############################################################################

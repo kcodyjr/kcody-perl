@@ -386,16 +386,17 @@ sub standin_restand {
 
 
 ###############################################################################
-# indicate a standin is being thrown away
+# indicate a standin is being thrown away, and return the object
 
 sub standin_discard {
 	my ( $callclass, $standin ) = @_;
 
-	my $this = $callclass->standin_restand( $standin )
+	my $rv = $callclass->standin_restand( $standin )
 		or return;
 
-	$this->decref;
+	$rv->decref;
 
+	return $rv;
 }
 
 
