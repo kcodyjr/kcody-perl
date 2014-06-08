@@ -7,11 +7,12 @@ IPC/Shm/Tied.pm
 IPC/Shm/Tied/ARRAY.pm
 IPC/Shm/Tied/HASH.pm
 IPC/Shm/Tied/SCALAR.pm
-t/test1.t
-t/test2.t
-t/test3.t
-t/test4.t
-t/test5.t
+t/00_preinit.t
+t/10_scalar.t
+t/11_scalar.t
+t/95_cleanup.t
+t/96_cleanup.t
+t/99_cleanup.t
 Makefile.PL
 MANIFEST
 README
