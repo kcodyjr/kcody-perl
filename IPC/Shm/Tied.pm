@@ -16,9 +16,22 @@ IPC::Shm::Tied
 
 =head1 SYNOPSIS
 
-This class is part of the IPC::Shm implementation. You should
-not be using it directly, as doing so would confuse the
-garbage collection routines.
+This class is part of the IPC::Shm implementation.
+
+ use IPC::Shm;
+ my $obj = tie my %foo, 'IPC::Shm::Tied';
+ $obj->tiedref( \%foo );
+
+You may use this module to tie lexicals as above, but if used on
+a package variable, it will behave as a lexical and be destroyed
+when all connections are closed.
+
+If the call to $obj->tiedref is omitted, another tied reference
+will be created when another shared variable's reference to this
+one is dereferenced. This is not desirable behavior.
+
+Optionally takes an IPC::Shm::Segment object as an argument. If
+none is supplied, C<IPC::Shm::Segment->anonymous> is called.
 
 =head1 SUPERCLASS
 
