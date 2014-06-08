@@ -8,13 +8,13 @@ use IPC::Shm;
 
 # MAKE A FEW VARIABLES
 
-our $variable : Shm = { foo => { bar => 'bam' } };
+our $pkgvar : Shm = { foo => { bar => 'bam' } };
 
 # DETACH FROM THOSE VARIABLES
 
-ok( untie $variable,			"untie \$variable" );
-undef $variable;
-ok( 1,					"undef \$variable" );
+ok( untie $pkgvar,			"untie \$pkgvar" );
+undef $pkgvar;
+ok( 1,					"undef \$pkgvar" );
 
 # GLOBAL CLEANUP
 

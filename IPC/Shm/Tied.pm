@@ -201,9 +201,9 @@ sub retie {
 sub DETACH {
 	my ( $this ) = @_;
 
+	$this->SUPER::DETACH;
 	$this->vcache_clean;
 	$this->tiedref_clean;
-	$this->SUPER::DETACH;
 
 	return;
 }

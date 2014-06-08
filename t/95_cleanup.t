@@ -9,22 +9,22 @@ my ( $obj );
 
 # CLEAN UP SCALARS
 
-our $variable : Shm;
+our $pkgvar : Shm;
 
-ok( $obj = tied( $variable ), 		"retrieving object" );
+ok( $obj = tied( $pkgvar ), 		"retrieving object" );
 ok( $obj->remove, 			"removing segment" );
 
 # CLEAN UP ARRAYS
 
-our @variable : Shm;
+our @pkgvar : Shm;
 
-ok( $obj = tied( @variable ),		"retrieving object" );
+ok( $obj = tied( @pkgvar ),		"retrieving object" );
 ok( $obj->remove, 			"removing segment" );
 
 # CLEAN UP HASHES
 
-our %variable : Shm;
+our %pkgvar : Shm;
 
-ok( $obj = tied( %variable ),		"retrieving object" );
+ok( $obj = tied( %pkgvar ),		"retrieving object" );
 ok( $obj->remove, 			"removing segment" );
 
