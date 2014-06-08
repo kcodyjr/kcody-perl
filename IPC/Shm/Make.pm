@@ -37,6 +37,10 @@ Given the standin left by makeshm, returns a reference to the original
 (now tied into shared memory) data. It's up to the calling program to
 know whether it expects a scalar, array, or hash reference.
 
+=head2 getback_discard( $standin );
+
+The same as C<getback> but also decrements the reference counter.
+
 =cut
 
 ###############################################################################

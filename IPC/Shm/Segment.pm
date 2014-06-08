@@ -103,6 +103,8 @@ an exactly equal copy of that object.
 
 Indicates that the standin reference is going away.
 
+Returns the original object as C<standin_restand>.
+
 =cut
 
 ###############################################################################
