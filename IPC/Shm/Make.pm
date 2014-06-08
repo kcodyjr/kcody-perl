@@ -16,8 +16,8 @@ IPC::Shm::Make
 
 =head1 SYNOPSIS
 
-This module is part of the IPC::Shm implementation. You should
-not be using it directly.
+This module is part of the IPC::Shm::Tied::* implementations. You should
+definitely not be using it directly.
 
 =head1 FUNCTIONS
 
@@ -120,31 +120,37 @@ sub makeshm {
 		if ( my $obj = tied $$refdata ) {
 			confess "Cannot store tied scalars in shared memory"
  				unless $obj->isa( 'IPC::Shm::Tied' );
-			# replace with Ref reference
+			$obj->incref;
+			$$valueref = $obj->standin;
+		} else {
+			$$valueref = _makeshm_scalar( $refdata );
 		}
-		$$valueref = _makeshm_scalar( $refdata );
 	}
 
 	elsif ( $reftype eq 'ARRAY' ) {
 		if ( my $obj = tied @$refdata ) {
 			confess "Cannot store tied arrays in shared memory"
  				unless $obj->isa( 'IPC::Shm::Tied' );
-			# replace with Ref reference
+			$obj->incref;
+			$$valueref = $obj->standin;
+		} else {
+			$$valueref = _makeshm_array( $refdata );
 		}
-		$$valueref = _makeshm_array( $refdata );
 	}
 
 	elsif ( $reftype eq 'HASH' ) {
 		if ( my $obj = tied %$refdata ) {
 			confess "Cannot store tied hashes in shared memory"
  				unless $obj->isa( 'IPC::Shm::Tied' );
-			# replace with Ref reference
+			$obj->incref;
+			$$valueref = $obj->standin;
+		} else {
+			$$valueref = _makeshm_hash( $refdata );
 		}
-		$$valueref = _makeshm_hash( $refdata );
 	}
 
 	else {
-		confess "Incompatible reference";
+		confess "Incompatible reference type $reftype";
 	}
 
 }
