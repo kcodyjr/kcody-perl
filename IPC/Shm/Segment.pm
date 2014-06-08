@@ -81,7 +81,7 @@ is being DESTROYed.
 
 =head2 $this->standin
 
-This is an shared memory analogue of a reference. It is stored in the
+This is a shared memory analogue of a reference. It is stored in the
 shared memory variable that holds the reference.
 
 Returns a reference to an anonymous hash containing suitable identifiers.
