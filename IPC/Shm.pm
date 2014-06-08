@@ -168,7 +168,7 @@ causes them to be cleared immediately rather than during global destruction.
 
 use Attribute::Handlers;
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 
 ###############################################################################
