@@ -33,6 +33,8 @@ one is dereferenced. This is not desirable behavior.
 Optionally takes an IPC::Shm::Segment object as an argument. If
 none is supplied, C<IPC::Shm::Segment->anonymous> is called.
 
+It is simpler to use the C<: shm> interface. See C<perldoc IPC::Shm>.
+
 =head1 SUPERCLASS
 
 This class is a derivative of IPC::Shm::Segment, which in turn
