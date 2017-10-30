@@ -1,0 +1,5 @@
+net-openvpn-ddns
+================
+
+Uses Net::DHCP::DDNS to implement dynamic DNS for OpenVPN.
+
