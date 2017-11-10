@@ -4,6 +4,7 @@ Linux/InitFS.pm
 Linux/InitFS/Entry.pm
 Linux/InitFS/Feature.pm
 Linux/InitFS/Kernel.pm
+Linux/InitFS/Spec.pm
 share/files/core/init
 share/files/lvm/lvm.conf
 share/specs/core.cfg
