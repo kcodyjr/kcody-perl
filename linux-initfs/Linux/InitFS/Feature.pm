@@ -127,10 +127,6 @@ sub enable_feature($) {
 
 sub enable_features() {
 
-	enable_feature 'core';
-	enable_feature 'rescue';
-	enable_feature 'vendor';
-
 	if ( is_enabled 'DEVTMPFS_MOUNT' ) {
 		enable_feature 'devtmpfs-mount';
 	}
@@ -143,11 +139,21 @@ sub enable_features() {
 		# FIXME implement
 	}
 
-	# FIXME move into a spec file somewhere
+	my $default = Linux::InitFS::Spec->new( 'default' );
 
-	enable_feature 'MD'   if is_enabled 'BLK_DEV_MD';
-	enable_feature 'LVM'  if is_enabled 'BLK_DEV_DM';
-	enable_feature 'LUKS' if is_enabled 'DM_CRYPT';
+	foreach my $spec ( @$default ) {
+		enable_feature shift @$spec;
+	}
+
+	my $feature = Linux::InitFS::Spec->new( 'feature' );
+
+	foreach my $spec ( @$feature ) {
+		my $subsys = shift @$spec;
+		my $config = shift @$spec;
+
+		enable_feature $subsys if is_enabled $config;
+
+	}
 
 	return 1;
 }
