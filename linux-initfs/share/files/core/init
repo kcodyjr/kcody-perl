@@ -1,0 +1,228 @@
+#!/bin/bash
+
+# capture boot process for troubleshooting
+
+exec 2>/run/initfs.trc
+set -x
+
+
+###############################################################################
+# static data
+
+LVMALIAS=(
+	lvchange lvcreate lvextend lvmdiskscan lvmsar lvremove lvresize lvscan
+	lvconvert lvdisplay lvmchange lvmconfig lvmsadc lvreduce lvrename lvs
+	pvchange pvck pvcreate pvdisplay pvmove pvremove pvresize pvs pvscan
+	vgcfgbackup vgchange vgconvert vgdisplay vgextend vgmknodes vgremove
+	vgs vgsplit vgcfgrestore vgck vgcreate vgexport vgimport vgmerge
+	vgreduce vgrename vgscan
+)
+
+
+###############################################################################
+# environment init
+
+if [[ -f /etc/inputrc ]]
+then
+	export INPUTRC=/etc/inputrc
+fi
+
+INITBIN='/sbin/init'
+ROOTDEV='LABEL=root'
+unset RESCUE
+
+
+###############################################################################
+# set up the initramfs contents for runtime
+
+initialize_initfs() {
+
+	/bin/busybox --install -s
+	rm -f /linuxrc
+
+	for lvmalias in ${LVMALIAS[@]}
+	do
+		ln -s lvm /sbin/$lvmalias
+	done
+
+	mount -t proc proc /proc
+	mount -t sysfs sysfs /sys
+	mount -t devtmpfs devtmpfs /dev
+
+}
+
+vaporize_initfs() {
+
+	umount /dev
+	umount /sys
+	umount /proc
+
+}
+
+preserve_initfs() {
+
+	set +x
+	exec 2>&1
+
+	if [[ -d /mnt/rootfs/mnt/initfs ]]
+	then
+		mount -o bind / /mnt/rootfs/mnt/initfs
+		mount -o ro,remount /mnt/rootfs/mnt/initfs
+	fi
+
+}
+
+
+###############################################################################
+# import kernel command line
+
+import_arg() {
+	local arg="$1"
+
+	case $arg in
+
+		ro)
+			MOUNTFLAG="ro"
+			;;
+		rw)
+			MOUNTFLAG="rw"
+			;;
+
+		root=*)
+			ROOTDEV=${arg#root=}
+			;;
+
+		init=*)
+			INITBIN=${arg#init=}
+			;;
+
+		rescue)
+			RESCUE="nonempty"
+			;;
+
+	esac
+}
+
+import_cmdline() {
+	local arg
+
+	for arg in $(cat /proc/cmdline)
+	do
+		import_arg "$arg"
+	done
+
+}
+
+
+###############################################################################
+# drop to a rescue shell (does not return)
+
+rescue_shell() {
+	echo
+	echo "RESCUE SHELL:"
+	setsid -c /bin/bash
+	rc=$?
+	echo
+	echo "rescue shell returned $rc"
+	echo
+}
+
+
+###############################################################################
+# make the user mount the rootfs manually
+
+is_rootfs_mounted() {
+	grep -q /mnt/rootfs /etc/mtab
+}
+
+
+rescue_repeatedly() {
+
+	while [[ 1 ]]
+	do
+		echo
+		echo "Root filesystem not mounted."
+		echo "Mount it to /mnt/rootfs manually, then exit this shell."
+		echo
+
+		rescue_shell
+
+		if is_rootfs_mounted
+		then
+			break
+		fi
+
+	done
+
+	return 0
+}
+
+
+###############################################################################
+# search for a valid root filesystem
+
+find_root_device() {
+	/bin/false
+}
+
+
+###############################################################################
+# ensure the root device is accessible
+
+load_root_device() {
+
+	if [[ -z $ROOTDEV ]]
+	then
+		find_root_device
+		return $?
+	fi
+
+	if [[ -b $ROOTDEV ]]
+	then
+		return 0
+	fi
+
+	numpvs=$(pvs --noheading 2>/dev/null | wc -l)
+
+	if [[ $numpvs -gt 0 ]]
+	then
+		vgchange -a y 2>/dev/null
+	fi
+
+	return $?
+}
+
+
+###############################################################################
+# perform the rootfs mount
+
+mount_rootfs() {
+
+	mount -o $MOUNTFLAG $ROOTDEV /mnt/rootfs
+
+	return $?
+}
+
+
+###############################################################################
+# MAIN BLOCK
+
+initialize_initfs
+import_cmdline
+
+load_root_device && mount_rootfs
+
+if [[ -n $RESCUE ]]
+then
+	rescue_repeatedly
+
+elif ! is_rootfs_mounted
+then
+	rescue_repeatedly
+fi
+
+vaporize_initfs
+preserve_initfs
+
+exec chroot /mnt/rootfs $INITBIN
+
