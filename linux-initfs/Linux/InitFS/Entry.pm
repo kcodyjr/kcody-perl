@@ -3,10 +3,6 @@ use warnings;
 use strict;
 
 my %ENTRIES = ();
-my $DYNLIBS = 0;
-
-# FIXME
-my $LINK = '/lib64/ld-linux-x86-64.so.2';
 
 
 ###############################################################################
@@ -26,6 +22,8 @@ sub new {
 	if ( $obj->{type} eq 'file' ) {
 		return undef unless $obj->_init_prog_deps();
 	}
+
+	# FIXME collision detection
 
 	$ENTRIES{$obj->{path}} = $obj;
 
@@ -59,6 +57,23 @@ sub new_nod {
 
 sub new_file {
 	my ( $class, $path, $from, %args ) = @_;
+
+	if ( -l $from ) {
+
+		my $link = readlink $from
+			or return;
+
+		$class->new_slink( $path, $link );
+
+		unless ( $link =~ /\// ) {
+			my @parts = split /\//, $from;
+			pop @parts;
+			push @parts, $link;
+			$link = join( '/', @parts );
+		}
+
+		return $class->new_host_file( $link, %args );
+	}
 
 	$args{type} = 'file';
 	$args{path} = $path;
@@ -154,15 +169,16 @@ sub _init_prog_deps_dynlib {
 	my $found = 0;
 
 	foreach ( `ldd $file 2>/dev/null` ) {
-		next unless /=>/;
-		chomp;
 
+		next unless /=>/ || /^\s*\/lib\d*\/ld-linux/;
+
+		chomp;
 		s/^[^\/]*\//\//;
 		s/\s.*$//;
 
 		next unless $_;
 
-		$this->new_host_file( $_, mode => 0644 );
+		$this->new_host_file( $_, mode => /ld-linux/ ? 0755 : 0644 );
 
 		$found++;
 
@@ -191,14 +207,8 @@ sub _init_prog_deps {
 
 	my $run = $this->{from};
 
-	if ( $this->_init_prog_deps_dynlib( $run ) ) {
-		return $DYNLIBS = 1;
-	}
-
-	if ( $this->_init_prog_deps_shell( $run ) ) {
-		return 1;
-	}
-
+	return 1 if $this->_init_prog_deps_dynlib( $run );
+	return 1 if $this->_init_prog_deps_shell( $run );
 	return 1;
 }
 
@@ -275,11 +285,11 @@ sub print_entry($$) {
 sub execute {
 	my ( $this ) = @_;
 
-	$this->new_host_prog( $LINK ) if $DYNLIBS;
+	my @order = sort { $a->{path} cmp $b->{path} } values %ENTRIES;
 
 	my ( @dirs, @devs, @rest );
 
-	foreach my $entry ( sort { $a->{path} cmp $b->{path} } values %ENTRIES ) {
+	foreach my $entry ( @order ) {
 
 		my $path = $entry->{path};
 		my $type = $entry->{type};
