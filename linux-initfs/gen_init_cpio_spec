@@ -1,0 +1,41 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+use Linux::InitFS;
+
+
+###############################################################################
+# tunables
+
+our @BINS = qw( /bin/bash /bin/busybox /sbin/lvm );
+our @TERM = qw( ansi dumb linux vt100 vt102 vt220 vt52 );
+
+
+###############################################################################
+# always need...
+
+# root's home dir
+Linux::InitFS::Entry->new_dir( '/root', mode => 0700 );
+
+# standard directories
+Linux::InitFS::Entry->new_dir( $_ ) for qw( /dev /run );
+
+# standard mount points
+Linux::InitFS::Entry->new_mnt_point( $_ ) for qw( /mnt/rootfs /sys /proc );
+
+
+###############################################################################
+# process requests...
+
+# terminal type info
+Linux::InitFS::Entry->new_term_type( $_ ) for @TERM;
+
+# requested programs
+Linux::InitFS::Entry->new_host_prog( $_ ) for @BINS;
+
+
+###############################################################################
+# spit it out...
+
+exit Linux::InitFS::generate() ? 0 : 1;
