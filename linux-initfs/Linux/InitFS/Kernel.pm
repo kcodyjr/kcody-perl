@@ -28,6 +28,11 @@ sub _detect_kconfig_here {
 sub _detect_kconfig_proc {
 }
 
+sub _detect_kconfig_src {
+
+	return _detect_kconfig_here( '/usr/src/linux' );
+}
+
 
 sub _import_kernel_config {
 	my ( $path ) = @_;
@@ -51,10 +56,12 @@ sub _import_kernel_config {
 	return keys %CONFIG;
 }
 
+
 sub detect_config() {
 
 	my $file   = _detect_kconfig_here( getcwd() );
 	   $file ||= _detect_kconfig_proc();
+	   $file ||= _detect_kconfig_src();
 
 	return unless $file;
 
