@@ -1,41 +1,37 @@
 #!/usr/bin/perl
 use warnings;
 use strict;
+#
+# gen_init_cpio_spec - spit out what the kernel needs to build-in an
+#                      initfs that can find and mount any kind of
+#                      root filesystem the same kernel can support
+#
+# outline:
+#
+#   1. Load the kernel config.
+#       a. Identify our parent process
+#       b. If it's make, investigate what makefile
+#       c. Find the kernel source from there
+#       d. Otherwise, assume /usr/src/linux
+#	2. Check for which supported features are compiled-in
+#       a. Allow the subclasses to include things
+#   3. Spit out the results
+#       b. By calling the collection of objects' class
 
 use Linux::InitFS;
 
 
-###############################################################################
-# tunables
+# go looking for a kernel config
+detect_kernel_config
+	or die "Unable to locate kernel sources.\n";
 
-our @BINS = qw( /bin/bash /bin/busybox /sbin/lvm );
-our @TERM = qw( ansi dumb linux vt100 vt102 vt220 vt52 );
+# see that we're in any way useful
+kernel_feature_enabled 'BLK_DEV_INITRD'
+	or die "Initial root filesystems are disabled.\n";
 
+# go looking for features
+enable_initfs_features
+	or die "Error while enabling initfs features.\n";
 
-###############################################################################
-# always need...
-
-# root's home dir
-Linux::InitFS::Entry->new_dir( '/root', mode => 0700 );
-
-# standard directories
-Linux::InitFS::Entry->new_dir( $_ ) for qw( /dev /run );
-
-# standard mount points
-Linux::InitFS::Entry->new_mnt_point( $_ ) for qw( /mnt/rootfs /sys /proc );
-
-
-###############################################################################
-# process requests...
-
-# terminal type info
-Linux::InitFS::Entry->new_term_type( $_ ) for @TERM;
-
-# requested programs
-Linux::InitFS::Entry->new_host_prog( $_ ) for @BINS;
-
-
-###############################################################################
 # spit it out...
-
-exit Linux::InitFS::generate() ? 0 : 1;
+exit generate_initfs_spec ? 0 : 1;

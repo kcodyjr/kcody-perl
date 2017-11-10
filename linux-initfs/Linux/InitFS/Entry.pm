@@ -152,8 +152,6 @@ sub _init_prog_deps {
 
 	if ( my @raw = `ldd $run 2>/dev/null` ) {
 
-		$DYNLIBS = 1;
-
 		foreach ( @raw ) {
 			next unless /=>/;
 			chomp;
@@ -162,6 +160,8 @@ sub _init_prog_deps {
 			s/\s.*$//;
 
 			$this->new_host_file( $_, mode => 0644 );
+
+			$DYNLIBS ||= 1;
 
 		}
 
