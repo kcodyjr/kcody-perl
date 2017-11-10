@@ -1,5 +1,7 @@
 Makefile.PL
+gen_init_cpio_spec
 Linux/InitFS.pm
+Linux/InitFS/Entry.pm
 MANIFEST
 AUTHORS
 COPYING
