@@ -10,6 +10,7 @@ my @MNTS = qw( /mnt/rootfs /sys /proc );
 my @DIRS = qw( /run /tmp );
 
 my %DEVS = qw();
+my %LINK = qw();
 
 
 { # private lexicals begin
@@ -54,6 +55,13 @@ sub sense_dev_mode {
 		ptmx	=> [qw( c 5 2 0666 0 0 )],
 	);
 
+	%LINK = (
+		fd	=> '/proc/self/fd',
+		stdin	=> '/proc/self/fd/0',
+		stdout	=> '/proc/self/fd/1',
+		stderr	=> '/proc/self/fd/2'
+	);
+
 	return if $mode;
 
 	# need full contents
@@ -82,6 +90,7 @@ sub ENABLE {
 	# terminal type info
 	Linux::InitFS::Entry->new_term_type( $_ ) for @TERM;
 
+	# device nodes
 	for my $dev ( keys %DEVS ) {
 		my ( $dtype, $major, $minor, $mode, $owner, $group ) = @{$DEVS{$dev}};
 
@@ -92,6 +101,15 @@ sub ENABLE {
 			mode  => $mode,  owner => $owner, group => $group );
 
 	}
+
+	# symlinks
+	for my $link ( keys %LINK ) {
+		my $full = '/dev/' . $link;
+		Linux::InitFS::Entry->new_slink( $full, $LINK{$link} );
+	}
+
+	# init script
+	Linux::InitFS::Entry->new_prog( '/init', '/usr/src/initfs/init' );
 
 }
 

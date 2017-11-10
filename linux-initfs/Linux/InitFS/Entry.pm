@@ -64,6 +64,10 @@ sub new_file {
 	$args{path} = $path;
 	$args{from} = $from;
 
+	unless ( exists $args{mode} ) {
+		$args{mode} = -x $from ? 0755 : 0644;
+	}
+
 	return $class->new( %args );
 }
 
@@ -81,17 +85,26 @@ sub new_slink {
 ###############################################################################
 # high-level constructors
 
+sub new_prog {
+	my ( $class, $path, $from, %args ) = @_;
+
+	unless ( exists $args{mode} ) {
+		$args{mode} = 0755;
+	}
+
+	return $class->new_file( $path, $from, %args );
+}
+
 sub new_host_file {
 	my ( $class, $path, %args ) = @_;
 
-	$args{path} = $path;
-	$args{from} = $path;
-
-	unless ( exists $args{mode} ) {
-		$args{mode} = -x $path ? 0755 : 0644;
-	}
-
 	return $class->new_file( $path, $path, %args );
+}
+
+sub new_host_prog {
+	my ( $class, $path, %args ) = @_;
+
+	return $class->new_prog( $path, $path, %args );
 }
 
 sub new_mnt_point {
@@ -110,16 +123,6 @@ sub new_term_type {
 	my $file = '/etc/terminfo/' . $char . '/' . $type;
 
 	return $class->new_host_file( $file );
-}
-
-sub new_host_prog {
-	my ( $class, $path, %args ) = @_;
-
-	unless ( exists $args{mode} ) {
-		$args{mode} = 0755;
-	}
-
-	return $class->new_host_file( $path, %args );
 }
 
 
@@ -145,30 +148,55 @@ sub _init_dirs {
 	return 1;
 }
 
+sub _init_prog_deps_dynlib {
+	my ( $this, $file ) = @_;
+
+	my $found = 0;
+
+	foreach ( `ldd $file 2>/dev/null` ) {
+		next unless /=>/;
+		chomp;
+
+		s/^[^\/]*\//\//;
+		s/\s.*$//;
+
+		next unless $_;
+
+		$this->new_host_file( $_, mode => 0644 );
+
+		$found++;
+
+	}
+
+	return $found;
+}
+
+sub _init_prog_deps_shell {
+	my ( $this, $file ) = @_;
+
+	my $rc = open my $fh, '<', $file;
+	return unless defined $rc;
+
+	my $txt = <$fh>;
+	my ( $interpreter ) = ( $txt =~ /^#!([^\s]+)/ );
+	return unless $interpreter;
+
+	$this->new_host_prog( $interpreter );
+
+	return 1;
+}
+
 sub _init_prog_deps {
 	my ( $this ) = @_;
 
 	my $run = $this->{from};
 
-	if ( my @raw = `ldd $run 2>/dev/null` ) {
-
-		foreach ( @raw ) {
-			next unless /=>/;
-			chomp;
-
-			s/^[^\/]*\//\//;
-			s/\s.*$//;
-
-			$this->new_host_file( $_, mode => 0644 );
-
-			$DYNLIBS ||= 1;
-
-		}
-
+	if ( $this->_init_prog_deps_dynlib( $run ) ) {
+		return $DYNLIBS = 1;
 	}
 
-	else {
-		# dig out the shell interpreter
+	if ( $this->_init_prog_deps_shell( $run ) ) {
+		return 1;
 	}
 
 	return 1;
@@ -219,9 +247,9 @@ sub print_entry($$) {
 	}
 
 	elsif ( $type eq 'nod' ) {
-		my $dtype = $this->{dtype} or return;
-		my $major = $this->{major} or return;
-		my $minor = $this->{minor} or return;
+		my $dtype = $this->{dtype};
+		my $major = $this->{major};
+		my $minor = $this->{minor};
 
 		print join( ' ', $type, $path, $mode, $owner, $group, $dtype, $major, $minor ), "\n";
 
