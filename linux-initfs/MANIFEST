@@ -2,7 +2,10 @@ Makefile.PL
 gen_init_cpio_spec
 Linux/InitFS.pm
 Linux/InitFS/Entry.pm
-MANIFEST
-AUTHORS
-COPYING
-LGPL-2.1
+Linux/InitFS/Feature.pm
+Linux/InitFS/Feature/Core.pm
+Linux/InitFS/Feature/LUKS.pm
+Linux/InitFS/Feature/LVM.pm
+Linux/InitFS/Feature/MD.pm
+Linux/InitFS/Feature/Rescue.pm
+Linux/InitFS/Kernel.pm
