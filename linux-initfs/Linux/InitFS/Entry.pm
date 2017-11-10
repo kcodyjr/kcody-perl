@@ -6,6 +6,31 @@ my %ENTRIES = ();
 
 
 ###############################################################################
+# cheat sheet for target symlinks
+
+{ # private lexicals begin
+
+my $symspec = undef;
+
+sub get_symlink($) {
+	my ( $linkfile ) = @_;
+
+	unless ( $symspec ) {
+		$symspec = Linux::InitFS::Spec->new( 'symlink' ) || [];
+		$symspec = { map { $_->[0] => $_->[1] } @$symspec };
+	}
+
+	if ( my $rv = $symspec->{$linkfile} ) {
+		return $rv;
+	}
+
+	return readlink $linkfile;
+}
+
+} # private lexicals end
+
+
+###############################################################################
 # base constructor
 
 sub new {
@@ -60,7 +85,7 @@ sub new_file {
 
 	if ( -l $from ) {
 
-		my $link = readlink $from
+		my $link = get_symlink $from
 			or return;
 
 		$class->new_slink( $path, $link );
