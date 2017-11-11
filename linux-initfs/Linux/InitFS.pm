@@ -2,6 +2,8 @@ package Linux::InitFS;
 use warnings;
 use strict;
 
+use 5.10;
+
 our $VERSION = 0.1;
 
 use base 'Exporter';
