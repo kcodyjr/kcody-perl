@@ -1,37 +1,51 @@
+# vim: ts=8
 use ExtUtils::MakeMaker;
+use File::ShareDir::Install;
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
+install_share 'share';
 
-	# source location
-    META_MERGE		=> {
-    	resources	=> {
-	    repository	=> 'https://github.com/kcodyjr/kcody-perl',
-	},
-    },
+WriteMakefile (
 
 	# package distribution
-    NAME		=> 'Linux::InitFS',
-    LICENSE		=> 'lgpl_2_1',
-    VERSION_FROM	=> 'Linux/InitFS.pm', # finds $VERSION
-    ABSTRACT_FROM	=> 'Linux/InitFS.pm',
-    PREREQ_PM		=> {
-    	Carp		=> 0,
-	Exporter	=> 0,
-    },
-    dist		=> {
-        COMPRESS	=> 'gzip',
-	SUFFIX		=> 'gz',
-    },
+	NAME                       => 'Linux::InitFS',
+	LICENSE                    => 'lgpl_2_1',
+	VERSION_FROM               => 'Linux/InitFS.pm',
+	ABSTRACT_FROM              => 'Linux/InitFS.pm',
 
 	# send flames to...
-    AUTHOR		=> 'Kevin Cody-Little <kcody@cpan.org>',
+	AUTHOR                     => 'Kevin Cody-Little <kcody@cpan.org>',
+
+	# source location
+	META_MERGE                 => {
+		resources          => {
+			repository => 'https://github.com/kcodyjr/kcody-perl',
+		},
+	},
+
+	# package distribution
+	NAME                       => 'Linux::InitFS',
+	LICENSE                    => 'lgpl_2_1',
+	VERSION_FROM               => 'Linux/InitFS.pm',
+	ABSTRACT_FROM              => 'Linux/InitFS.pm',
+
+	PREREQ_PM                  => {
+		'Cwd'              => 0,
+		'Exporter'         => 0,
+		'File::ShareDir'   => 0
+	},
+
+	dist                       => {
+		COMPRESS           => 'gzip',
+		SUFFIX             => 'gz'
+	},
 
 	# executable hook for kernel build
-	INSTALLSCRIPT => '/usr/libexec',
-	INSTALLSITESCRIPT => '/usr/libexec',
-	INSTALLVENDORSCRIPT => '/usr/libexec',
-	EXE_FILES => [ gen_init_cpio_spec ]
+	INSTALLSCRIPT              => '/usr/libexec',
+	INSTALLSITESCRIPT          => '/usr/libexec',
+	INSTALLVENDORSCRIPT        => '/usr/libexec',
+	EXE_FILES                  => [ 'gen_init_cpio_spec' ]
 
 );
+
+package MY;
+use File::ShareDir::Install qw( postamble );
