@@ -2,7 +2,7 @@ package Linux::InitFS;
 use warnings;
 use strict;
 
-use 5.10;
+use 5.10.0;
 
 our $VERSION = 0.1;
 
