@@ -2,8 +2,11 @@ package Linux::InitFS::Spec;
 use warnings;
 use strict;
 
-my $BASE = '/usr/share/initfs/specs';
+use File::ShareDir;
 
+my $BASE = File::ShareDir::dist_dir( 'Linux-InitFS' );
+
+warn "base: $BASE\n";
 
 sub new {
 	my ( $this, $name ) = @_;

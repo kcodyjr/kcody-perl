@@ -2,7 +2,10 @@ package Linux::InitFS::Feature;
 use warnings;
 use strict;
 
+use File::ShareDir;
 use Linux::InitFS::Spec;
+
+my $BASE = File::ShareDir::dist_dir( 'Linux-InitFS' );
 
 
 sub is_enabled($) {
@@ -33,7 +36,7 @@ sub locate_host_prog($) {
 sub locate_init_file($$) {
 	my ( $name, $file ) = @_;
 
-	return join( '/', '/usr/share/initfs/files', $name, $file );
+	return join( '/', $BASE, 'files', $name, $file );
 }
 
 
