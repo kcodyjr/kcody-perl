@@ -1,10 +1,10 @@
 Makefile.PL
 gen_init_cpio_spec
-Linux/InitFS.pm
-Linux/InitFS/Entry.pm
-Linux/InitFS/Feature.pm
-Linux/InitFS/Kernel.pm
-Linux/InitFS/Spec.pm
+lib/Linux/InitFS.pm
+lib/Linux/InitFS/Entry.pm
+lib/Linux/InitFS/Feature.pm
+lib/Linux/InitFS/Kernel.pm
+lib/Linux/InitFS/Spec.pm
 share/files/core/init
 share/files/core/init.d/01_busybox.sh
 share/files/core/init.d/02_mountsys.sh

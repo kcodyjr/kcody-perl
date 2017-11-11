@@ -9,8 +9,7 @@ WriteMakefile (
 	# package distribution
 	NAME                       => 'Linux::InitFS',
 	LICENSE                    => 'lgpl_2_1',
-	VERSION_FROM               => 'Linux/InitFS.pm',
-	ABSTRACT_FROM              => 'Linux/InitFS.pm',
+	VERSION_FROM               => 'lib/Linux/InitFS.pm',
 
 	# send flames to...
 	AUTHOR                     => 'Kevin Cody-Little <kcody@cpan.org>',
@@ -22,18 +21,12 @@ WriteMakefile (
 		},
 	},
 
-	# package distribution
-	NAME                       => 'Linux::InitFS',
-	LICENSE                    => 'lgpl_2_1',
-	VERSION_FROM               => 'Linux/InitFS.pm',
-	ABSTRACT_FROM              => 'Linux/InitFS.pm',
-
+	# dist info
 	PREREQ_PM                  => {
 		'Cwd'              => 0,
 		'Exporter'         => 0,
 		'File::ShareDir'   => 0
 	},
-
 	dist                       => {
 		COMPRESS           => 'gzip',
 		SUFFIX             => 'gz'
