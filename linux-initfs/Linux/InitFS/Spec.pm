@@ -6,8 +6,6 @@ use File::ShareDir;
 
 my $BASE = File::ShareDir::dist_dir( 'Linux-InitFS' );
 
-warn "base: $BASE\n";
-
 sub new {
 	my ( $this, $name ) = @_;
 
@@ -21,7 +19,7 @@ sub new {
 sub init {
 	my ( $this, $name ) = @_;
 
-	my $file = $BASE . '/' . $name . '.cfg';
+	my $file = $BASE . '/specs/' . $name . '.cfg';
 
 	return unless -f $file && -r $file;
 
