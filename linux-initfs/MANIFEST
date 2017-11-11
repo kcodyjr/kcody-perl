@@ -1,3 +1,4 @@
+MANIFEST
 Makefile.PL
 gen_init_cpio_spec
 lib/Linux/InitFS.pm
