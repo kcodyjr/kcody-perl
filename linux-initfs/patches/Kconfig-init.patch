@@ -1,0 +1,11 @@
+--- linux/init/Kconfig.orig	2017-11-11 20:40:16.487299966 -0500
++++ linux/init/Kconfig	2017-11-11 20:53:41.328915962 -0500
+@@ -1009,7 +1009,7 @@
+ 
+ 	  If unsure, say N.
+ 
+-config BLK_DEV_INITRD
++menuconfig BLK_DEV_INITRD
+ 	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
+ 	depends on BROKEN || !FRV
+ 	help

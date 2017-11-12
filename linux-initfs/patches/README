@@ -1,0 +1,6 @@
+
+These are patches to the Linux kernel.
+
+They must all be applied using "patch -p1" from the 
+tree top directory.
+
