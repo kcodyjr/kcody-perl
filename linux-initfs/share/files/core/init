@@ -30,43 +30,48 @@ INITBIN='/sbin/init'
 ROOTDEV='LABEL=root'
 MNTFLAG='ro'
 
+GETARGS=(get_arg_core)
+
 
 ###############################################################################
 # import kernel command line
 
-import_arg() {
+get_arg_core() {
 	local arg="$1"
 
 	case $arg in
 
 		ro)
-			MNTFLAG="ro"
+			MNTFLAG=ro
 			;;
 		rw)
-			MNTFLAG="rw"
+			MNTFLAG=rw
 			;;
 
 		root=*)
 			ROOTDEV=${arg#root=}
 			;;
 
-		init=*)
-			INITBIN=${arg#init=}
+		rootflags=*)
+			ROOTFLG=${arg#rootflags=}
 			;;
 
-		rescue)
-			RESCUE=nonempty
+		init=*)
+			INITBIN=${arg#init=}
 			;;
 
 	esac
 }
 
 import_cmdline() {
-	local arg
+	local arg func
 
 	for arg in $(cat /proc/cmdline)
 	do
-		import_arg "$arg"
+		for func in ${GETARGS[@]}
+		do
+			$func $arg
+		done
 	done
 
 }
@@ -77,8 +82,16 @@ import_cmdline() {
 
 # try it
 mount_rootfs() {
+	local flag
 
-	mount -o $MNTFLAG $ROOTDEV $ROOTMNT
+	flag=$MNTFLAG
+
+	if [[ -n $ROOTFLG ]]
+	then
+		flag="${flag},${ROOTFLG}"
+	fi
+
+	mount -o $flag $ROOTDEV $ROOTMNT
 
 	return $?
 }
@@ -90,6 +103,7 @@ load_rootdev() {
 	for f in /etc/load.d/*.sh
 	do
 		[[ -r $f ]] && source $f
+		is_rootfs_mounted && break
 	done
 
 }
@@ -121,17 +135,16 @@ mount_rootfs 2> /dev/null
 if ! is_rootfs_mounted
 then
 	load_rootdev
+fi
+
+if ! is_rootfs_mounted
+then
 	mount_rootfs
 fi
 
 if ! is_rootfs_mounted
 then
 	rootfs_not_mounted
-fi
-
-if [[ -n $INIT_HAS_RESCUE && -n $RESCUE ]]
-then
-	rescue_shell
 fi
 
 for f in /etc/done.d/*.sh

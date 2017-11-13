@@ -4,7 +4,24 @@
 
 PS1='\$ '
 
-INIT_HAS_RESCUE=nonempty
+
+###############################################################################
+# argument parser
+
+get_arg_rescue() {
+	local arg="$1"
+
+	case $arg in
+
+		rescue)
+			RESCUE=nonempty
+			;;
+
+	esac
+
+}
+
+GETARGS+=(get_arg_rescue)
 
 
 ###############################################################################
