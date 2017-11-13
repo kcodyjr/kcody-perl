@@ -127,34 +127,42 @@ sub enable_feature($) {
 
 }
 
+sub find_truth(@) {
+	my ( @spec ) = @_;
+	my $rv = 1;
+
+	while ( my $chk = shift @spec ) {
+		my $not = 0;
+
+		if ( $chk =~ /^\!/ ) {
+			$chk =~ s/^\!//;
+			$not = 1;
+		}
+
+		my $rc = is_enabled $chk;
+
+		if ( $not ) {
+			$rc = ! $rc;
+		}
+
+		$rv &&= $rc;
+
+		return 0 unless $rv;
+	}
+
+	return $rv;
+}
 
 sub enable_features() {
 
-	if ( is_enabled 'DEVTMPFS_MOUNT' ) {
-		enable_feature 'devtmpfs-mount';
-	}
-
-	elsif ( is_enabled 'DEVTMPFS' ) {
-		enable_feature 'devtmpfs';
-	}
-
-	else {
-		# FIXME implement
-	}
-
-	my $default = Linux::InitFS::Spec->new( 'default' );
-
-	foreach my $spec ( @$default ) {
-		enable_feature shift @$spec;
-	}
-
-	my $feature = Linux::InitFS::Spec->new( 'feature' );
+	my $feature = Linux::InitFS::Spec->new( 'initfs' );
 
 	foreach my $spec ( @$feature ) {
 		my $subsys = shift @$spec;
-		my $config = shift @$spec;
 
-		enable_feature $subsys if is_enabled $config;
+		my $doit = find_truth @$spec;
+
+		enable_feature $subsys if $doit;
 
 	}
 
