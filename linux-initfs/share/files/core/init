@@ -100,7 +100,16 @@ is_rootfs_mounted() {
 
 # if we have no rootfs
 rootfs_not_mounted() {
-	exit # give up, kernel panic
+	echo
+	echo
+	echo *** FATAL ***
+	echo
+	echo Unable to locate root filesystem.
+	echo Halting system.
+	echo
+	echo
+	/sbin/halt -f   # try to go quietly
+	exit            # give up, kernel panic
 }
 
 
