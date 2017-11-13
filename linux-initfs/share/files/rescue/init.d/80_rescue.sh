@@ -22,23 +22,16 @@ GETARGS+=(get_arg_rescue)
 # drop to a rescue shell
 
 rescue_shell() {
+	local rc
 	echo
-	echo "RESCUE SHELL:"
+	echo "RESCUE SHELL: (exit or ^d to continue)"
 	echo
-	(
-		if [[ -f /etc/inputrc && ! -f /etc/profile ]]
-		then
-			INPUTRC=/etc/inputrc
-			export INPUTRC
-		fi
-
-		setsid -c /bin/bash -l
-
-	) 2>&1
+	setsid -c /bin/bash -l 2>&1
 	rc=$?
 	echo
 	echo "rescue shell returned $rc"
 	echo
+	return $rc
 }
 
 
