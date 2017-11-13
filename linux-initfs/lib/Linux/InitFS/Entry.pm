@@ -146,7 +146,17 @@ sub new_host_prog {
 
 	my $from = $path;
 
-	$path =~ s/^\/usr//;
+	my @path = split /\//, $path;
+	my $prog = pop @path;
+	my $sdir = pop @path;
+
+	if ( $sdir =~ /bin/ ) {
+		$path = join( '/', '', $sdir, $prog );
+	}
+
+	else {
+		$path = '/bin/' . $prog;
+	}
 
 	return $class->new_prog( $path, $from, %args );
 }
