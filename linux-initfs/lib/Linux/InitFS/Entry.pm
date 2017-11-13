@@ -6,31 +6,6 @@ my %ENTRIES = ();
 
 
 ###############################################################################
-# cheat sheet for target symlinks
-
-{ # private lexicals begin
-
-my $symspec = undef;
-
-sub get_symlink($) {
-	my ( $linkfile ) = @_;
-
-	unless ( $symspec ) {
-		$symspec = Linux::InitFS::Spec->new( 'symlink' ) || [];
-		$symspec = { map { $_->[0] => $_->[1] } @$symspec };
-	}
-
-	if ( my $rv = $symspec->{$linkfile} ) {
-		return $rv;
-	}
-
-	return readlink $linkfile;
-}
-
-} # private lexicals end
-
-
-###############################################################################
 # base constructor
 
 sub new {
@@ -42,13 +17,17 @@ sub new {
 
 	return undef unless $obj->{path};
 	return undef unless $obj->{type};
+
+	if ( my $rv = $ENTRIES{$obj->{path}} ) {
+		# FIXME sometimes this is bad...
+		return $rv;
+	}
+
 	return undef unless $obj->_init_dirs();
 
 	if ( $obj->{type} eq 'file' ) {
 		return undef unless $obj->_init_prog_deps();
 	}
-
-	# FIXME collision detection
 
 	$ENTRIES{$obj->{path}} = $obj;
 
@@ -85,7 +64,7 @@ sub new_file {
 
 	if ( -l $from ) {
 
-		my $link = get_symlink $from
+		my $link = readlink $from
 			or return;
 
 		$class->new_slink( $path, $link );
