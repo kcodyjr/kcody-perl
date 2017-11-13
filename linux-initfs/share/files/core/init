@@ -10,16 +10,11 @@ set -x
 ###############################################################################
 # environment init
 
-if [[ -f /etc/inputrc ]]
-then
-	INPUTRC=/etc/inputrc
-	export INPUTRC
-fi
-
-if [[ -f /etc/profile ]]
-then
-	source /etc/profile
-fi
+#if [[ -f /etc/inputrc ]]
+#then
+#	INPUTRC=/etc/inputrc
+#	export INPUTRC
+#fi
 
 
 ###############################################################################

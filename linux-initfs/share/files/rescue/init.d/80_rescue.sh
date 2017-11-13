@@ -1,11 +1,5 @@
 
 ###############################################################################
-# environment setup
-
-PS1='\$ '
-
-
-###############################################################################
 # argument parser
 
 get_arg_rescue() {
@@ -30,7 +24,17 @@ GETARGS+=(get_arg_rescue)
 rescue_shell() {
 	echo
 	echo "RESCUE SHELL:"
-	setsid -c /bin/bash
+	echo
+	(
+		if [[ -f /etc/inputrc && ! -f /etc/profile ]]
+		then
+			INPUTRC=/etc/inputrc
+			export INPUTRC
+		fi
+
+		setsid -c /bin/bash -l
+
+	) 2>&1
 	rc=$?
 	echo
 	echo "rescue shell returned $rc"
