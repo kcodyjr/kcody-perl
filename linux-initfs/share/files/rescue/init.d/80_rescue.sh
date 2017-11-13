@@ -26,7 +26,10 @@ rescue_shell() {
 	echo
 	echo "RESCUE SHELL: (exit or ^d to continue)"
 	echo
-	setsid -c /bin/bash -l 2>&1
+	(
+		export HOME=/root
+		setsid -c /bin/bash -l 2>&1
+	)
 	rc=$?
 	echo
 	echo "rescue shell returned $rc"
