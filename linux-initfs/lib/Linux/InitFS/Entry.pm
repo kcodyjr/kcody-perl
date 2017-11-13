@@ -144,21 +144,7 @@ sub new_host_file {
 sub new_host_prog {
 	my ( $class, $path, %args ) = @_;
 
-	my $from = $path;
-
-	my @path = split /\//, $path;
-	my $prog = pop @path;
-	my $sdir = pop @path;
-
-	if ( $sdir =~ /bin/ ) {
-		$path = join( '/', '', $sdir, $prog );
-	}
-
-	else {
-		$path = '/bin/' . $prog;
-	}
-
-	return $class->new_prog( $path, $from, %args );
+	return $class->new_prog( $path, $path, %args );
 }
 
 sub new_mnt_point {
