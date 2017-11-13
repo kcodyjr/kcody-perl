@@ -8,16 +8,6 @@ set -x
 
 
 ###############################################################################
-# environment init
-
-#if [[ -f /etc/inputrc ]]
-#then
-#	INPUTRC=/etc/inputrc
-#	export INPUTRC
-#fi
-
-
-###############################################################################
 # program variables
 
 ROOTMNT='/mnt/rootfs'
@@ -146,5 +136,6 @@ for f in /etc/done.d/*.sh
 do
 	[[ -r $f ]] && source $f
 done
+unset f
 
 exec chroot $ROOTMNT $INITBIN
