@@ -1,4 +1,4 @@
 
-export PS1='root@rescue \$ '
+export PS1='[root@rescue: \w] \$ '
 export INPUTRC='/etc/inputrc'
 
