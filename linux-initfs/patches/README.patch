@@ -1,0 +1,14 @@
+
+Linux-InitFS is designed to work in conjunction with the kernel
+makeconfig menu. This patch, linux-initfs.patch, should be applied
+from the base of the kernel tree using '-p1'.
+
+It will:
+1. Move initramfs/initrd into its own submenu.
+2. Add several options about a "default initfs".
+3. Allow scripts/gen_initramfs_list.sh to call
+   executables as well as read text files to
+   get its cpio specification.
+
+The individual one-file-per makefiles are in perfile/.
+
