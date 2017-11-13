@@ -212,20 +212,20 @@ sub _init_prog_deps_dynlib {
 	return $found;
 }
 
-sub _init_prog_deps_shell {
-	my ( $this, $file ) = @_;
-
-	my $rc = open my $fh, '<', $file;
-	return unless defined $rc;
-
-	my $txt = <$fh>;
-	my ( $interpreter ) = ( $txt =~ /^#!([^\s]+)/ );
-	return unless $interpreter;
-
-	$this->new_host_prog( $interpreter );
-
-	return 1;
-}
+#sub _init_prog_deps_shell {
+#	my ( $this, $file ) = @_;
+#
+#	my $rc = open my $fh, '<', $file;
+#	return unless defined $rc;
+#
+#	my $txt = <$fh>;
+#	my ( $interpreter ) = ( $txt =~ /^#!([^\s]+)/ );
+#	return unless $interpreter;
+#
+#	$this->new_host_prog( $interpreter );
+#
+#	return 1;
+#}
 
 sub _init_prog_deps {
 	my ( $this ) = @_;
@@ -233,7 +233,7 @@ sub _init_prog_deps {
 	my $run = $this->{from};
 
 	return 1 if $this->_init_prog_deps_dynlib( $run );
-	return 1 if $this->_init_prog_deps_shell( $run );
+#	return 1 if $this->_init_prog_deps_shell( $run );
 	return 1;
 }
 
