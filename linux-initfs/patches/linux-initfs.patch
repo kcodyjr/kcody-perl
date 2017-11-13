@@ -9,225 +9,205 @@
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
  	depends on BROKEN || !FRV
  	help
---- linux/usr/Kconfig.orig	2017-11-10 18:16:04.328781113 -0500
-+++ linux/usr/Kconfig	2017-11-11 21:47:02.103994691 -0500
-@@ -2,54 +2,7 @@
- # Configuration for initramfs
- #
- 
--config INITRAMFS_SOURCE
--	string "Initramfs source file(s)"
--	default ""
--	help
--	  This can be either a single cpio archive with a .cpio suffix or a
--	  space-separated list of directories and files for building the
--	  initramfs image.  A cpio archive should contain a filesystem archive
--	  to be used as an initramfs image.  Directories should contain a
--	  filesystem layout to be included in the initramfs image.  Files
--	  should contain entries according to the format described by the
--	  "usr/gen_init_cpio" program in the kernel tree.
--
--	  When multiple directories and files are specified then the
--	  initramfs image will be the aggregate of all of them.
--
--	  See <file:Documentation/early-userspace/README> for more details.
--
--	  If you are not sure, leave it blank.
--
--config INITRAMFS_FORCE
--	bool "Ignore the initramfs passed by the bootloader"
--	depends on CMDLINE_EXTEND || CMDLINE_FORCE
--	help
--	  This option causes the kernel to ignore the initramfs image
--	  (or initrd image) passed to it by the bootloader. This is
--	  analogous to CMDLINE_FORCE, which is found on some architectures,
--	  and is useful if you cannot or don't want to change the image
--	  your bootloader passes to the kernel.
--
--config INITRAMFS_ROOT_UID
--	int "User ID to map to 0 (user root)"
--	depends on INITRAMFS_SOURCE!=""
--	default "0"
--	help
--	  If INITRAMFS_SOURCE points to a directory, files owned by this UID
--	  (-1 = current user) will be owned by root in the resulting image.
--
--	  If you are not sure, leave it set to "0".
--
--config INITRAMFS_ROOT_GID
--	int "Group ID to map to 0 (group root)"
--	depends on INITRAMFS_SOURCE!=""
--	default "0"
--	help
--	  If INITRAMFS_SOURCE points to a directory, files owned by this GID
--	  (-1 = current group) will be owned by root in the resulting image.
--
--	  If you are not sure, leave it set to "0".
-+menu "Initramfs/initrd compression support"
- 
- config RD_GZIP
- 	bool "Support initial ramdisk/ramfs compressed using gzip"
-@@ -105,9 +58,125 @@
- 	  Support loading of a LZ4 encoded initial ramdisk or cpio buffer
- 	  If unsure, say N.
- 
-+endmenu
-+
-+menuconfig INITRAMFS_AUTO
-+	bool "Use default built-in initramfs"
-+	default n
-+	help
-+	  Use the stock auto-generated initramfs, and build it into the
-+	  kernel binary. It will include the correct early userspace
-+	  components to support whatever options you've compiled-in to
-+	  this kernel. Note, "Linux::InitFS" from CPAN is required.
-+
-+config INITRAMFS_HELPER
-+	string "Content selection helper"
-+	depends on INITRAMFS_AUTO
-+	default "/usr/libexec/gen_init_cpio_spec"
-+	help
-+	  Path to the program that will generate the initramfs spec.
-+	  The default comes from Linux::InitFS on CPAN.
-+
-+config INITRAMFS_WITH_RESCUE
-+	boolean "Enable rescue shell"
-+	depends on INITRAMFS_AUTO
-+	default y
-+	help
-+	  If set to yes, the initramfs will drop to a shell if it is
-+	  unable to find the requested root filesystem. If set to no,
-+	  the initramfs will exit and cause kernel panic on failure.
-+	  This is really a security decision.
-+
-+config INITRAMFS_WITH_FSTOOL
-+	boolean "Include file system check utilities"
-+	depends on INITRAMFS_AUTO
-+	default n
-+	help
-+	  If set to yes, the fsck tool for any filesystem compiled into
-+	  the kernel, not as a module, will be included in the initramfs.
-+	  Note that these tools will take up space that needs to be copied
-+	  from the disk to RAM as the kernel boots, each time.
-+
-+config INITRAMFS_WITH_LSENSE
-+	boolean "Sense what root filesystem is locally in use"
-+	depends on INITRAMFS_AUTO
-+	default n
-+	help
-+	  If set to yes, only those tools required to support the currently
-+	  mounted root filesystem will be included in the initramfs, while if
-+	  set to no, the tools required to support any compiled-in root file
-+	  system option will be included in the initramfs.
-+
-+config INITRAMFS_WITH_STATIC
-+	boolean "Prefer statically compiled tools in the initramfs"
-+	depends on INITRAMFS_AUTO
-+	default n
-+	help
-+	  If set to yes, will look for '.static' versions of any binary
-+	  specified to be in the initramfs, in the hope of avoiding having
-+	  to include a whole bunch of libraries. If set to no, the default
-+	  binary will be used, and any required libraries will be included.
-+
-+menuconfig INITRAMFS_MANUAL
-+	boolean "Use custom built-in initramfs"
-+	default n
-+	help
-+	  Specify a directory to include as a built-in initramfs, or a
-+	  text file specifying the cpio contents of such.
-+
-+config INITRAMFS_SOURCE
-+	string "Custom built-in initramfs source file(s)"
-+	depends on INITRAMFS_MANUAL
-+	default ""
-+	help
-+	  This can be either a single cpio archive with a .cpio suffix or a
-+	  space-separated list of directories and files for building the
-+	  initramfs image.  A cpio archive should contain a filesystem archive
-+	  to be used as an initramfs image.  Directories should contain a
-+	  filesystem layout to be included in the initramfs image.  Files
-+	  should contain entries according to the format described by the
-+	  "usr/gen_init_cpio" program in the kernel tree.
-+
-+	  When multiple directories and files are specified then the
-+	  initramfs image will be the aggregate of all of them.
-+
-+	  See <file:Documentation/early-userspace/README> for more details.
-+
-+	  If you are not sure, leave it blank.
-+
-+config INITRAMFS_ROOT_UID
-+	int "User ID to map to 0 (user root)"
-+	depends on INITRAMFS_MANUAL
-+	default "0"
-+	help
-+	  If INITRAMFS_SOURCE points to a directory, files owned by this UID
-+	  (-1 = current user) will be owned by root in the resulting image.
-+
-+	  If you are not sure, leave it set to "0".
-+
-+config INITRAMFS_ROOT_GID
-+	int "Group ID to map to 0 (group root)"
-+	depends on INITRAMFS_MANUAL
-+	default "0"
-+	help
-+	  If INITRAMFS_SOURCE points to a directory, files owned by this GID
-+	  (-1 = current group) will be owned by root in the resulting image.
-+
-+	  If you are not sure, leave it set to "0".
-+
-+config INITRAMFS_FORCE
-+	bool "Ignore the initramfs passed by the bootloader"
-+	depends on CMDLINE_EXTEND || CMDLINE_FORCE
-+	help
-+	  This option causes the kernel to ignore the initramfs image
-+	  (or initrd image) passed to it by the bootloader. This is
-+	  analogous to CMDLINE_FORCE, which is found on some architectures,
-+	  and is useful if you cannot or don't want to change the image
-+	  your bootloader passes to the kernel.
-+
- choice
- 	prompt "Built-in initramfs compression mode"
--	depends on INITRAMFS_SOURCE!=""
-+	depends on INITRAMFS_SOURCE!="" || INITRAMFS_HELPER!=""
- 	optional
- 	help
- 	  This option allows you to decide by which algorithm the builtin
-@@ -216,7 +285,7 @@
- endchoice
- 
- config INITRAMFS_COMPRESSION
--	depends on INITRAMFS_SOURCE!=""
-+	depends on INITRAMFS_SOURCE!="" || INITRAMFS_HELPER!=""
- 	string
- 	default ""      if INITRAMFS_COMPRESSION_NONE
- 	default ".gz"   if INITRAMFS_COMPRESSION_GZIP
-@@ -225,10 +294,4 @@
- 	default ".xz"   if INITRAMFS_COMPRESSION_XZ
- 	default ".lzo"  if INITRAMFS_COMPRESSION_LZO
- 	default ".lz4"  if INITRAMFS_COMPRESSION_LZ4
--	default ".gz"   if RD_GZIP
--	default ".lz4"  if RD_LZ4
--	default ".lzo"  if RD_LZO
--	default ".xz"   if RD_XZ
--	default ".lzma" if RD_LZMA
--	default ".bz2"  if RD_BZIP2
- 	default ""
---- linux/usr/Makefile.orig	2017-11-10 17:59:16.796093778 -0500
-+++ linux/usr/Makefile	2017-11-10 18:03:23.153078209 -0500
-@@ -24,7 +24,10 @@
- hostprogs-y := gen_init_cpio
- initramfs   := $(CONFIG_SHELL) $(srctree)/scripts/gen_initramfs_list.sh
- ramfs-input := $(if $(filter-out "",$(CONFIG_INITRAMFS_SOURCE)), \
--			$(shell echo $(CONFIG_INITRAMFS_SOURCE)),-d)
-+			$(shell echo $(CONFIG_INITRAMFS_SOURCE)),-d) \
-+               $(if $(filter-out "",$(CONFIG_INITRAMFS_HELPER)), \
-+			$(shell echo $(CONFIG_INITRAMFS_HELPER)),-d)
-+
- ramfs-args  := \
-         $(if $(CONFIG_INITRAMFS_ROOT_UID), -u $(CONFIG_INITRAMFS_ROOT_UID)) \
-         $(if $(CONFIG_INITRAMFS_ROOT_GID), -g $(CONFIG_INITRAMFS_ROOT_GID))
+5,52c5
+< config INITRAMFS_SOURCE
+< 	string "Initramfs source file(s)"
+< 	default ""
+< 	help
+< 	  This can be either a single cpio archive with a .cpio suffix or a
+< 	  space-separated list of directories and files for building the
+< 	  initramfs image.  A cpio archive should contain a filesystem archive
+< 	  to be used as an initramfs image.  Directories should contain a
+< 	  filesystem layout to be included in the initramfs image.  Files
+< 	  should contain entries according to the format described by the
+< 	  "usr/gen_init_cpio" program in the kernel tree.
+< 
+< 	  When multiple directories and files are specified then the
+< 	  initramfs image will be the aggregate of all of them.
+< 
+< 	  See <file:Documentation/early-userspace/README> for more details.
+< 
+< 	  If you are not sure, leave it blank.
+< 
+< config INITRAMFS_FORCE
+< 	bool "Ignore the initramfs passed by the bootloader"
+< 	depends on CMDLINE_EXTEND || CMDLINE_FORCE
+< 	help
+< 	  This option causes the kernel to ignore the initramfs image
+< 	  (or initrd image) passed to it by the bootloader. This is
+< 	  analogous to CMDLINE_FORCE, which is found on some architectures,
+< 	  and is useful if you cannot or don't want to change the image
+< 	  your bootloader passes to the kernel.
+< 
+< config INITRAMFS_ROOT_UID
+< 	int "User ID to map to 0 (user root)"
+< 	depends on INITRAMFS_SOURCE!=""
+< 	default "0"
+< 	help
+< 	  If INITRAMFS_SOURCE points to a directory, files owned by this UID
+< 	  (-1 = current user) will be owned by root in the resulting image.
+< 
+< 	  If you are not sure, leave it set to "0".
+< 
+< config INITRAMFS_ROOT_GID
+< 	int "Group ID to map to 0 (group root)"
+< 	depends on INITRAMFS_SOURCE!=""
+< 	default "0"
+< 	help
+< 	  If INITRAMFS_SOURCE points to a directory, files owned by this GID
+< 	  (-1 = current group) will be owned by root in the resulting image.
+< 
+< 	  If you are not sure, leave it set to "0".
+---
+> menu "Initramfs/initrd compression support"
+107a61,183
+> endmenu
+> 
+> choice
+> 	prompt "Built-in initramfs"
+> 	depends on BLK_DEV_INITRD
+> 	optional
+> 	help
+> 	  This option allows you to build an initramfs directly into the
+> 	  kernel, so you needn't load one through the bootloader. You still
+> 	  can, though, and the second will be laid atop the first before
+> 	  /init (or $rdinit) is called.
+> 
+> config INITRAMFS_AUTO
+> 	boolean "Use default early userspace"
+> 	help
+> 	  Use the stock auto-generated initramfs, and build it into the
+> 	  kernel binary. It will include the correct early userspace
+> 	  components to support whatever options you've compiled-in to
+> 	  this kernel. Note, "Linux::InitFS" from CPAN is required.
+> 
+> config INITRAMFS_CUSTOM
+> 	boolean "Use custom early userspace"
+> 	help
+> 	  Specify a directory to include as a built-in initramfs, or a
+> 	  text file specifying the cpio contents of such.
+> 
+> endchoice
+> 
+> config INITRAMFS_SOURCE
+> 	string
+> 	depends on INITRAMFS_AUTO
+> 	default "/usr/libexec/gen_init_cpio_spec"
+> 
+> config INITRAMFS_WITH_RESCUE
+> 	boolean "Enable rescue shell"
+> 	depends on INITRAMFS_AUTO
+> 	default y
+> 	help
+> 	  If set to yes, the initramfs will drop to a shell if it is
+> 	  unable to find the requested root filesystem. If set to no,
+> 	  the initramfs will exit and cause kernel panic on failure.
+> 	  This is really a security decision.
+> 
+> config INITRAMFS_WITH_FSTOOL
+> 	boolean "Include file system check utilities"
+> 	depends on INITRAMFS_AUTO
+> 	default n
+> 	help
+> 	  If set to yes, the fsck tool for any filesystem compiled into
+> 	  the kernel, not as a module, will be included in the initramfs.
+> 	  Note that these tools will take up space that needs to be copied
+> 	  from the disk to RAM as the kernel boots, each time.
+> 
+> config INITRAMFS_WITH_LSENSE
+> 	boolean "Sense what root filesystem is locally in use"
+> 	depends on INITRAMFS_AUTO
+> 	default n
+> 	help
+> 	  If set to yes, only those tools required to support the currently
+> 	  mounted root filesystem will be included in the initramfs, while if
+> 	  set to no, the tools required to support any compiled-in root file
+> 	  system option will be included in the initramfs.
+> 
+> config INITRAMFS_WITH_STATIC
+> 	boolean "Prefer statically compiled tools in the initramfs"
+> 	depends on INITRAMFS_AUTO
+> 	default n
+> 	help
+> 	  If set to yes, will look for '.static' versions of any binary
+> 	  specified to be in the initramfs, in the hope of avoiding having
+> 	  to include a whole bunch of libraries. If set to no, the default
+> 	  binary will be used, and any required libraries will be included.
+> 
+> config INITRAMFS_SOURCE
+> 	string "Custom built-in initramfs source file(s)"
+> 	depends on INITRAMFS_CUSTOM
+> 	default ""
+> 	help
+> 	  This can be either a single cpio archive with a .cpio suffix or a
+> 	  space-separated list of directories and files for building the
+> 	  initramfs image.  A cpio archive should contain a filesystem archive
+> 	  to be used as an initramfs image.  Directories should contain a
+> 	  filesystem layout to be included in the initramfs image.  Files
+> 	  should contain entries according to the format described by the
+> 	  "usr/gen_init_cpio" program in the kernel tree.
+> 
+> 	  When multiple directories and files are specified then the
+> 	  initramfs image will be the aggregate of all of them.
+> 
+> 	  See <file:Documentation/early-userspace/README> for more details.
+> 
+> 	  If you are not sure, leave it blank.
+> 
+> config INITRAMFS_ROOT_UID
+> 	int "User ID to map to 0 (user root)"
+> 	depends on INITRAMFS_CUSTOM
+> 	default "0"
+> 	help
+> 	  If INITRAMFS_SOURCE points to a directory, files owned by this UID
+> 	  (-1 = current user) will be owned by root in the resulting image.
+> 
+> 	  If you are not sure, leave it set to "0".
+> 
+> config INITRAMFS_ROOT_GID
+> 	int "Group ID to map to 0 (group root)"
+> 	depends on INITRAMFS_CUSTOM
+> 	default "0"
+> 	help
+> 	  If INITRAMFS_SOURCE points to a directory, files owned by this GID
+> 	  (-1 = current group) will be owned by root in the resulting image.
+> 
+> 	  If you are not sure, leave it set to "0".
+> 
+> config INITRAMFS_FORCE
+> 	bool "Ignore the initramfs passed by the bootloader"
+> 	depends on CMDLINE_EXTEND || CMDLINE_FORCE
+> 	help
+> 	  This option causes the kernel to ignore the initramfs image
+> 	  (or initrd image) passed to it by the bootloader. This is
+> 	  analogous to CMDLINE_FORCE, which is found on some architectures,
+> 	  and is useful if you cannot or don't want to change the image
+> 	  your bootloader passes to the kernel.
+> 
+131,139c207,210
+< 	  If in doubt, select 'None'
+< 
+< config INITRAMFS_COMPRESSION_NONE
+< 	bool "None"
+< 	help
+< 	  Do not compress the built-in initramfs at all. This may sound wasteful
+< 	  in space, but, you should be aware that the built-in initramfs will be
+< 	  compressed at a later stage anyways along with the rest of the kernel,
+< 	  on those architectures that support this. However, not compressing the
+---
+> 	  If in doubt, do not use. This may sound wasteful in space, but, you
+> 	  should be aware that the built-in initramfs will be compressed at a
+> 	  later stage anyways along with the rest of the kernel, on those
+> 	  architectures that support this. However, not compressing the
+221d291
+< 	default ""      if INITRAMFS_COMPRESSION_NONE
+228,233d297
+< 	default ".gz"   if RD_GZIP
+< 	default ".lz4"  if RD_LZ4
+< 	default ".lzo"  if RD_LZO
+< 	default ".xz"   if RD_XZ
+< 	default ".lzma" if RD_LZMA
+< 	default ".bz2"  if RD_BZIP2
 --- linux/scripts/gen_initramfs_list.sh.orig	2017-11-10 01:50:25.685322259 -0500
 +++ linux/scripts/gen_initramfs_list.sh	2017-11-10 02:24:42.707363462 -0500
 @@ -192,7 +192,21 @@
