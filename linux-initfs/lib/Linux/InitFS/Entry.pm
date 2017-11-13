@@ -144,7 +144,11 @@ sub new_host_file {
 sub new_host_prog {
 	my ( $class, $path, %args ) = @_;
 
-	return $class->new_prog( $path, $path, %args );
+	my $from = $path;
+
+	$path =~ s/^\/usr//;
+
+	return $class->new_prog( $path, $from, %args );
 }
 
 sub new_mnt_point {
