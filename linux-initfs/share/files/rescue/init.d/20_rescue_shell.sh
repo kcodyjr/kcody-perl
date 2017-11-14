@@ -12,7 +12,7 @@ rescue_shell() {
 		export HOME=/root
 		cd $HOME
 		set +x
-		echo "+ $run"
+		echo "+ $run" >&2 # force trace entry
 		$run 2>&1
 		set -x
 	)
