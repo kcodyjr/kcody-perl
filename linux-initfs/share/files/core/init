@@ -17,6 +17,10 @@ MNTFLAG='ro'
 
 GETARGS='get_arg_core'
 
+# bash would give us one but busybox would not
+PATH='/sbin:/bin:/usr/sbin:/usr/bin:'
+export PATH
+
 
 ###############################################################################
 # global kernel command line functions
@@ -97,7 +101,7 @@ load_rootdev() {
 
 	for f in /etc/load.d/*.sh
 	do
-		[[ -r $f ]] && source $f
+		[[ -r $f ]] && . $f
 		is_rootfs_mounted && break
 	done
 
@@ -114,7 +118,7 @@ is_rootfs_mounted() {
 
 for f in /etc/init.d/*.sh
 do
-	[[ -r $f ]] && source $f
+	[[ -r $f ]] && . $f
 done
 unset f
 
@@ -134,7 +138,7 @@ fi
 
 for f in /etc/done.d/*.sh
 do
-	[[ -r $f ]] && source $f
+	[[ -r $f ]] && . $f
 done
 unset f
 
