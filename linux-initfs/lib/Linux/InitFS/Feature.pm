@@ -51,6 +51,7 @@ sub translate_args(@) {
 	return %rv;
 }
 
+sub enable_feature($);
 
 sub enable_feature_item($@) {
 	my ( $name, $kind, $path, @args ) = @_;
@@ -108,6 +109,10 @@ sub enable_feature_item($@) {
 		$path = shift @args;
 		%more = translate_args @args;
 		Linux::InitFS::Entry->new_prog( $path, $from, %more );
+	}
+
+	elsif ( $kind eq 'requires' ) {
+		enable_feature $path;
 	}
 
 	else {
