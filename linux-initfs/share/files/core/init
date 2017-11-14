@@ -39,6 +39,13 @@ import_cmdline() {
 		done
 	done
 
+	if [[ -n $ROOTFLG ]]
+	then
+		MNTOPTS="${MNTFLAG},${ROOTFLG}"
+	else
+		MNTOPTS=$MNTFLAG
+	fi
+
 }
 
 
@@ -78,16 +85,8 @@ get_arg_core() {
 
 # try it
 mount_rootfs() {
-	local flag
 
-	flag=$MNTFLAG
-
-	if [[ -n $ROOTFLG ]]
-	then
-		flag="${flag},${ROOTFLG}"
-	fi
-
-	mount -o $flag $ROOTDEV $ROOTMNT
+	mount -o $MNTOPTS $ROOTDEV $ROOTMNT
 
 	return $?
 }
@@ -107,20 +106,6 @@ load_rootdev() {
 # test for it
 is_rootfs_mounted() {
 	grep -q $ROOTMNT /etc/mtab
-}
-
-# if we have no rootfs
-rootfs_not_mounted() {
-	echo
-	echo
-	echo *** FATAL ***
-	echo
-	echo Unable to locate root filesystem.
-	echo Halting system.
-	echo
-	echo
-	/sbin/halt -f   # try to go quietly
-	exit            # give up, kernel panic
 }
 
 
@@ -147,11 +132,6 @@ then
 	mount_rootfs
 fi
 
-if ! is_rootfs_mounted
-then
-	rootfs_not_mounted
-fi
-
 for f in /etc/done.d/*.sh
 do
 	[[ -r $f ]] && source $f
@@ -159,3 +139,7 @@ done
 unset f
 
 exec chroot $ROOTMNT $INITBIN
+
+echo BUG: got to end of rootfs:/init
+exit # panic - should never get here
+
