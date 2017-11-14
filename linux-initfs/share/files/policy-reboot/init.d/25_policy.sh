@@ -10,8 +10,9 @@ rootfs_not_found_reboot() {
 	echo
 	echo '*** FATAL ***'
 	echo
-	echo 'Unable to locate root filesystem.'
-	echo 'Rebooting system.'
+	echo 'Unable to locate root filesystem' $ROOTDEV
+	echo
+	echo 'Rebooting.'
 	echo
 	echo
 

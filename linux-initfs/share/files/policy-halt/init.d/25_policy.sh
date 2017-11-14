@@ -10,8 +10,9 @@ rootfs_not_found_halt() {
 	echo
 	echo '*** FATAL ***'
 	echo
-	echo 'Unable to locate root filesystem.'
-	echo 'Halting system.'
+	echo 'Unable to locate root filesystem' $ROOTDEV
+	echo
+	echo 'Halting.'
 	echo
 	echo
 

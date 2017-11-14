@@ -9,8 +9,12 @@ rootfs_not_found_rescue() {
 	while [[ 1 ]]
 	do
 		echo
-		echo "Root filesystem not mounted."
-		echo "Mount it to /mnt/rootfs manually, then exit this shell."
+		echo
+		echo '*** ERROR ***'
+		echo
+		echo 'Root filesystem not found.'
+		echo
+		echo 'Mount it to /mnt/rootfs manually, then exit this shell.'
 		echo
 
 		rescue_shell
