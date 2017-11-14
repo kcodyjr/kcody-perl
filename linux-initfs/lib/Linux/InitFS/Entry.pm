@@ -118,8 +118,9 @@ sub new_prog {
 		$WANT_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC' );
 	}
 
-	if ( $WANT_STATIC and -e my $static = $from . '.static' ) {
-		$from = $static;
+	if ( $WANT_STATIC ) {
+		my $static = $from . '.static';
+		$from = $static if -e $static;
 	}
 
 	return $class->new_file( $path, $from, %args );
