@@ -19,6 +19,5 @@ get_arg_resume() {
 
 }
 
-GETARGS+=(get_arg_resume)
-
+import_handler get_arg_resume
 

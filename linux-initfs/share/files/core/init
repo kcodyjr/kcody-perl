@@ -15,11 +15,35 @@ INITBIN='/sbin/init'
 ROOTDEV='LABEL=root'
 MNTFLAG='ro'
 
-GETARGS=(get_arg_core)
+GETARGS='get_arg_core'
 
 
 ###############################################################################
-# import kernel command line
+# global kernel command line functions
+
+import_handler() {
+	local func="$1"
+
+	GETARGS="${GETARGS} $func"
+
+}
+
+import_cmdline() {
+	local arg func
+
+	for arg in $(cat /proc/cmdline)
+	do
+		for func in $GETARGS
+		do
+			$func $arg
+		done
+	done
+
+}
+
+
+###############################################################################
+# core kernel argument handler
 
 get_arg_core() {
 	local arg="$1"
@@ -46,19 +70,6 @@ get_arg_core() {
 			;;
 
 	esac
-}
-
-import_cmdline() {
-	local arg func
-
-	for arg in $(cat /proc/cmdline)
-	do
-		for func in ${GETARGS[@]}
-		do
-			$func $arg
-		done
-	done
-
 }
 
 

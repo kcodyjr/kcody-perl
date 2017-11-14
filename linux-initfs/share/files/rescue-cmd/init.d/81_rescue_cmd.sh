@@ -15,5 +15,5 @@ get_arg_rescue_cmd() {
 
 }
 
-GETARGS+=(get_arg_rescue_cmd)
+import_handler get_arg_rescue_cmd
 
