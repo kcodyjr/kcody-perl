@@ -99,7 +99,7 @@ mount_rootfs() {
 load_rootdev() {
 	local f
 
-	for f in /etc/load.d/*.sh
+	for f in /lib/initfs/load.d/*.sh
 	do
 		[[ -r $f ]] && . $f
 		is_rootfs_mounted && break
@@ -116,7 +116,7 @@ is_rootfs_mounted() {
 ###############################################################################
 # MAIN BLOCK
 
-for f in /etc/init.d/*.sh
+for f in /lib/initfs/init.d/*.sh
 do
 	[[ -r $f ]] && . $f
 done
@@ -136,7 +136,7 @@ then
 	mount_rootfs
 fi
 
-for f in /etc/done.d/*.sh
+for f in /lib/initfs/done.d/*.sh
 do
 	[[ -r $f ]] && . $f
 done
