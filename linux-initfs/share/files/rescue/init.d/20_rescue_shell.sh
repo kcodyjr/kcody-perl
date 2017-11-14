@@ -4,14 +4,16 @@
 
 rescue_shell() {
 	local rc
+	local run="setsid -c /bin/sh -l"
 	echo
 	echo "RESCUE SHELL: (exit or ^d to continue)"
 	echo
 	(
 		export HOME=/root
-		cd /root
+		cd $HOME
 		set +x
-		setsid -c /bin/sh -l 2>&1
+		echo "+ $run"
+		$run 2>&1
 		set -x
 	)
 	rc=$?

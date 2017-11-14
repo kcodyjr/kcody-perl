@@ -124,7 +124,7 @@ unset f
 
 import_cmdline
 
-mount_rootfs 2> /dev/null
+mount_rootfs
 
 if ! is_rootfs_mounted
 then

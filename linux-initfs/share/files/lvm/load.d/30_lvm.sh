@@ -1,10 +1,10 @@
 
 
-numpvs=$(pvs --noheading 2>/dev/null | wc -l)
+numpvs=$(pvs --noheading | wc -l)
 
 if [[ $numpvs -gt 0 ]]
 then
-	vgchange -a y 2>/dev/null
+	vgchange -a y
 fi
 
 unset numpvs
