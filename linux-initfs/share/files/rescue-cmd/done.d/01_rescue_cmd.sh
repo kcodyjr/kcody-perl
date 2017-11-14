@@ -5,8 +5,7 @@ if is_root_mounted
 then
 	rescue_doit=$RESCUE
 
-elif [[ -n $RESCUE &&
-        ( $ROOTFS_NOT_FOUND != rootfs_not_found_rescue ) ]]
+elif [[ -n $RESCUE && ( $ROOTFS_NOT_FOUND != rootfs_not_found_rescue ) ]]
 then
 	rescue_doit=nonempty
 fi
