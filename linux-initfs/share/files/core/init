@@ -17,9 +17,14 @@ MNTFLAG='ro'
 
 GETARGS='get_arg_core'
 
-# bash would give us one but busybox would not
-PATH='/sbin:/bin:/usr/sbin:/usr/bin:'
-export PATH
+
+###############################################################################
+# set environment visible to /init
+
+for f in /etc/env.d/*.sh
+do
+	[[ -r $f ]] && . $f
+done
 
 
 ###############################################################################
