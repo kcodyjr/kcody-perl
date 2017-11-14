@@ -4,6 +4,9 @@ use strict;
 
 my %ENTRIES = ();
 
+my $WANT_STATIC = undef;
+my $ONLY_STATIC = undef;
+
 
 ###############################################################################
 # base constructor
@@ -111,6 +114,14 @@ sub new_prog {
 		$args{mode} = 0755;
 	}
 
+	unless ( defined $WANT_STATIC ) {
+		$WANT_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC' );
+	}
+
+	if ( $WANT_STATIC and -e my $static = $from . '.static' ) {
+		$from = $static;
+	}
+
 	return $class->new_file( $path, $from, %args );
 }
 
@@ -210,6 +221,10 @@ sub _init_prog_deps {
 	my ( $this ) = @_;
 
 	my $run = $this->{from};
+
+	unless ( defined $ONLY_STATIC ) {
+		$ONLY_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC_ONLY' );
+	}
 
 	return 1 if $this->_init_prog_deps_dynlib( $run );
 #	return 1 if $this->_init_prog_deps_shell( $run );
