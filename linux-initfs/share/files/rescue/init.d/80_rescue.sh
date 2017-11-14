@@ -1,24 +1,5 @@
 
 ###############################################################################
-# argument parser
-
-get_arg_rescue() {
-	local arg="$1"
-
-	case $arg in
-
-		rescue)
-			RESCUE=nonempty
-			;;
-
-	esac
-
-}
-
-GETARGS+=(get_arg_rescue)
-
-
-###############################################################################
 # drop to a rescue shell
 
 rescue_shell() {
