@@ -10,7 +10,7 @@ rescue_shell() {
 	(
 		export HOME=/root
 		cd /root
-		setsid -c /bin/bash -l 2>&1
+		setsid -c /bin/sh -l 2>&1
 	)
 	rc=$?
 	echo
