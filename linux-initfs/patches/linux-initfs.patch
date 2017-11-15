@@ -10,7 +10,7 @@
  	depends on BROKEN || !FRV
  	help
 --- linux-4.13.11-gentoo/usr/Kconfig.orig	2017-11-10 18:16:04.328781113 -0500
-+++ linux-4.13.12-gentoo/usr/Kconfig	2017-11-14 02:12:14.393233170 -0500
++++ linux/usr/Kconfig	2017-11-15 02:56:27.749732686 -0500
 @@ -2,54 +2,7 @@
  # Configuration for initramfs
  #
@@ -67,7 +67,7 @@
  
  config RD_GZIP
  	bool "Support initial ramdisk/ramfs compressed using gzip"
-@@ -105,6 +58,212 @@
+@@ -105,6 +58,248 @@
  	  Support loading of a LZ4 encoded initial ramdisk or cpio buffer
  	  If unsure, say N.
  
@@ -194,13 +194,49 @@
 +config INITRAMFS_WITH_FSTOOL
 +	boolean "Include file system check utilities"
 +	depends on INITRAMFS_WITH_RESCUE
-+	select INITRAMFS_WITH_BASH if XFS_FS=y
 +	default n
 +	help
 +	  If set to yes, the fsck tool for any filesystem compiled into
 +	  the kernel, not as a module, will be included in the initramfs.
 +	  Note that these tools will take up space that needs to be copied
 +	  from the disk to RAM as the kernel boots, each time.
++
++config INITRAMFS_WITH_XFS_SELECT
++	boolean "Include XFS utilities"
++	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && XFS_FS=y
++	default y
++
++config INITRAMFS_WITH_XFS
++	boolean
++	depends on INITRAMFS_WITH_FSTOOL
++	default y if INITRAMFS_FOR_ANY_ROOT && XFS_FS
++	default y if INITRAMFS_WITH_XFS_SELECT
++	default n
++	select INITRAMFS_WITH_BASH
++
++config INITRAMFS_WITH_BTRFS_SELECT
++	boolean "Include btrfs utilities"
++	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && BTRFS_FS
++	default y
++
++config INITRAMFS_WITH_BTRFS
++	boolean
++	depends on INITRAMFS_WITH_FSTOOL
++	default y if INITRAMFS_FOR_ANY_ROOT && BTRFS_FS
++	default y if INITRAMFS_WITH_BTRFS_SELECT
++	default n
++
++config INITRAMFS_WITH_EXTFS_SELECT
++	boolean "Include ext4fs utilities"
++	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && EXT4_FS
++	default y
++
++config INITRAMFS_WITH_EXTFS
++	boolean
++	depends on INITRAMFS_WITH_FSTOOL
++	default y if INITRAMFS_FOR_ANY_ROOT && EXT4_FS
++	default y if INITRAMFS_WITH_EXTFS_SELECT
++	default n
 +
 +config INITRAMFS_WITH_STATIC
 +	boolean "Prefer static binaries"
@@ -280,7 +316,7 @@
  choice
  	prompt "Built-in initramfs compression mode"
  	depends on INITRAMFS_SOURCE!=""
-@@ -128,15 +287,10 @@
+@@ -128,15 +323,10 @@
  	  compression tool to compress the generated initram cpio file for
  	  embedding.
  
@@ -300,7 +336,7 @@
  	  initramfs may lead to slightly higher memory consumption during a
  	  short time at boot, while both the cpio image and the unpacked
  	  filesystem image will be present in memory simultaneously
-@@ -218,17 +372,10 @@
+@@ -218,17 +408,10 @@
  config INITRAMFS_COMPRESSION
  	depends on INITRAMFS_SOURCE!=""
  	string
