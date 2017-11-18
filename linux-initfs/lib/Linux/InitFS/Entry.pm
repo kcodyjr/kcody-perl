@@ -82,6 +82,10 @@ sub new_file {
 		return $class->new_host_file( $link, %args );
 	}
 
+	if ( -d $from ) {
+		return $class->new_dir( $path, %args );
+	}
+
 	$args{type} = 'file';
 	$args{path} = $path;
 	$args{from} = $from;
