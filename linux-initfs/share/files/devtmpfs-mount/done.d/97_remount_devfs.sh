@@ -1,3 +1,3 @@
 
-mount -t devtmpfs -o nosuid devtmpfs /dev
+mount -t devtmpfs -o nosuid devtmpfs "${ROOTMNT}/dev"
 
