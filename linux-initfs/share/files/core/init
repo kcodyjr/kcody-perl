@@ -94,8 +94,16 @@ get_arg_core() {
 
 # try it
 mount_rootfs() {
+	local fstype
 
-	mount -o $MNTOPTS $ROOTDEV $ROOTMNT
+	fstype=$(blkid $NEXTDEV | sed 's/.*TYPE=//;s/^"//;s/"$//')
+
+	if [[ -z $fstype ]]
+	then
+		return 1
+	fi
+
+	mount -t $fstype -o $MNTOPTS $NEXTDEV $ROOTMNT
 
 	return $?
 }
@@ -117,6 +125,32 @@ is_rootfs_mounted() {
 	grep -q $ROOTMNT /etc/mtab
 }
 
+# highlevel: the whole sequence
+mount_rootfs_effort() {
+
+	[[ -z $NEXTDEV ]] && NEXTDEV=$ROOTDEV
+
+	mount_rootfs
+
+	if ! is_rootfs_mounted
+	then
+		local f
+		for f in /lib/initfs/load.d/*.sh
+		do
+			[[ -r $f ]] && . $f
+			is_rootfs_mounted && break
+		done
+	fi
+
+	if ! is_rootfs_mounted
+	then
+		mount_rootfs
+		return $?
+	fi
+
+	return 0
+}
+
 
 ###############################################################################
 # MAIN BLOCK
@@ -129,17 +163,7 @@ unset f
 
 import_cmdline
 
-mount_rootfs
-
-if ! is_rootfs_mounted
-then
-	load_rootdev
-fi
-
-if ! is_rootfs_mounted
-then
-	mount_rootfs
-fi
+mount_rootfs_effort
 
 for f in /lib/initfs/done.d/*.sh
 do
