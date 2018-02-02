@@ -13,7 +13,7 @@ rescue_shell() {
 		cd $HOME
 		set +x
 		echo "+ $run" >&2 # force trace entry
-		$run 2>&1
+		$run </dev/console >/dev/console 2>/dev/console
 		set -x
 	)
 	rc=$?
