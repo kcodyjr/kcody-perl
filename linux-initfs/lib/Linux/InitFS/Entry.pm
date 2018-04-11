@@ -336,6 +336,7 @@ sub execute {
 	$_->print_entry() for @devs;
 	$_->print_entry() for @rest;
 
+	return ( @dirs or @devs or @rest ) ? 1 : 0;
 }
 
 
