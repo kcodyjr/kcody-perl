@@ -1,6 +1,9 @@
 
 for f in /etc/profile.d/*.sh
 do
-	[[ -r $f ]] && . $f
+	if [ -r $f ]
+	then
+		. $f
+	fi
 done
 

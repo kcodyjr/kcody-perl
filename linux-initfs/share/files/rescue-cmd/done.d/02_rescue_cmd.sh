@@ -5,15 +5,15 @@ if is_rootfs_mounted
 then
 	rescue_doit=$RESCUE
 
-elif [[ -n $RESCUE ]]
+elif [ -n "$RESCUE" ]
 then
-	if [[ $ROOTFS_NOT_FOUND != rootfs_not_found_rescue ]]
+	if [ "$ROOTFS_NOT_FOUND" != rootfs_not_found_rescue ]
 	then
 		rescue_doit=nonempty
 	fi
 fi
 
-if [[ -n $rescue_doit ]]
+if [ -n "$rescue_doit" ]
 then
 	rescue_shell
 fi

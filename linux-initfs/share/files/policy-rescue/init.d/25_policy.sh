@@ -6,7 +6,7 @@ ROOTFS_NOT_FOUND=rootfs_not_found_rescue
 
 rootfs_not_found_rescue() {
 
-	while [[ 1 ]]
+	while true
 	do
 		echo
 		echo

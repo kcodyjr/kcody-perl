@@ -2,7 +2,7 @@
 if ! is_rootfs_mounted
 then
 
-	if [[ -n $ROOTFS_NOT_FOUND ]]
+	if [ -n "$ROOTFS_NOT_FOUND" ]
 	then
 		$ROOTFS_NOT_FOUND
 	else

@@ -23,7 +23,10 @@ GETARGS='get_arg_core'
 
 for f in /etc/env.d/*.sh
 do
-	[[ -r $f ]] && . $f
+	if [ -r $f ]
+	then
+		. $f
+	fi
 done
 
 
@@ -48,7 +51,7 @@ import_cmdline() {
 		done
 	done
 
-	if [[ -n $ROOTFLG ]]
+	if [ -n "$ROOTFLG" ]
 	then
 		MNTOPTS="${MNTFLAG},${ROOTFLG}"
 	else
@@ -98,7 +101,7 @@ mount_rootfs() {
 
 	fstype=$(blkid $NEXTDEV | sed 's/.*TYPE=//;s/^"//;s/"$//')
 
-	if [[ -z $fstype ]]
+	if [ -z "$fstype" ]
 	then
 		return 1
 	fi
@@ -114,7 +117,10 @@ load_rootdev() {
 
 	for f in /lib/initfs/load.d/*.sh
 	do
-		[[ -r $f ]] && . $f
+		if [ -r $f ]
+		then
+			. $f
+		fi
 		is_rootfs_mounted && break
 	done
 
@@ -128,7 +134,10 @@ is_rootfs_mounted() {
 # highlevel: the whole sequence
 mount_rootfs_effort() {
 
-	[[ -z $NEXTDEV ]] && NEXTDEV=$ROOTDEV
+	if [ -z $NEXTDEV ]
+	then
+		NEXTDEV=$ROOTDEV
+	fi
 
 	mount_rootfs
 
@@ -137,7 +146,10 @@ mount_rootfs_effort() {
 		local f
 		for f in /lib/initfs/load.d/*.sh
 		do
-			[[ -r $f ]] && . $f
+			if [ -r $f ]
+			then
+				. $f
+			fi
 			is_rootfs_mounted && break
 		done
 	fi
@@ -157,7 +169,10 @@ mount_rootfs_effort() {
 
 for f in /lib/initfs/init.d/*.sh
 do
-	[[ -r $f ]] && . $f
+	if [ -r $f ]
+	then
+		. $f
+	fi
 done
 unset f
 
@@ -167,7 +182,10 @@ mount_rootfs_effort
 
 for f in /lib/initfs/done.d/*.sh
 do
-	[[ -r $f ]] && . $f
+	if [ -r $f ]
+	then
+		. $f
+	fi
 done
 unset f
 

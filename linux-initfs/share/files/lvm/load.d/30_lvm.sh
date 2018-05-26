@@ -2,7 +2,7 @@
 
 numpvs=$(pvs --noheading | wc -l)
 
-if [[ $numpvs -gt 0 ]]
+if [ $numpvs -gt 0 ]
 then
 	vgchange -a y
 fi
