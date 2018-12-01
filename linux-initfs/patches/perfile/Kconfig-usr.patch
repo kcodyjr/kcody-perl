@@ -73,7 +73,7 @@
 +	  /init (or $rdinit) is called.
 +
 +config INITRAMFS_AUTO
-+	boolean "Use default early userspace"
++	bool "Use default early userspace"
 +	help
 +	  Use the stock auto-generated initramfs, and build it into the
 +	  kernel binary. It will include the correct early userspace
@@ -81,7 +81,7 @@
 +	  this kernel. Note, "Linux::InitFS" from CPAN is required.
 +
 +config INITRAMFS_CUSTOM
-+	boolean "Use custom early userspace"
++	bool "Use custom early userspace"
 +	help
 +	  Specify a directory to include as a built-in initramfs, or a
 +	  text file specifying the cpio contents of such.
@@ -98,7 +98,7 @@
 +	  support itself, which must be turned on for options to show here.
 +
 +config INITRAMFS_FOR_ANY_ROOT
-+	boolean "Support everything"
++	bool "Support everything"
 +	help
 +	  All of the filesystems and block devices selected in the kernel
 +	  that can be supported, will be. This produces a portable
@@ -107,19 +107,19 @@
 +	  Unless you're doing a build for a specific device, choose this.
 +
 +config INITRAMFS_FOR_HOST_ROOT
-+	boolean "Support build root"
++	bool "Support build root"
 +	help
 +	  Support exactly what is needed to boot the currently mounted
 +	  root filesystem on the host doing this build.
 +
 +config INITRAMFS_FOR_HOST_MTAB
-+	boolean "Support build host"
++	bool "Support build host"
 +	help
 +	  Support all of the filesystem types currently mounted as
 +	  potential root filesystems.
 +
 +config INITRAMFS_FOR_SOME_ROOT
-+	boolean "Customize support"
++	bool "Customize support"
 +	help
 +	  Options will be presented below.
 +
@@ -138,24 +138,24 @@
 +		nor can any filesystem with LABEL=root
 +
 +config INITRAMFS_POLICY_RESCUE
-+	boolean "Enter a rescue shell"
++	bool "Enter a rescue shell"
 +	select INITRAMFS_WITH_RESCUE
 +
 +config INITRAMFS_POLICY_REBOOT
-+	boolean "Reboot the system"
++	bool "Reboot the system"
 +
 +config INITRAMFS_POLICY_HALT
-+	boolean "Halt the system"
++	bool "Halt the system"
 +
 +endchoice
 +
 +config INITRAMFS_NEED_DYNLIB
-+	boolean
++	bool
 +	depends on INITRAMFS_AUTO
 +	default n
 +
 +menuconfig INITRAMFS_WITH_RESCUE
-+	boolean "Enable rescue shell"
++	bool "Enable rescue shell"
 +	depends on INITRAMFS_AUTO
 +	default y
 +	help
@@ -165,7 +165,7 @@
 +	  This is really a security decision.
 +
 +config INITRAMFS_WITH_RESCUE_OPTION
-+	boolean "Allow kernel command line invocation"
++	bool "Allow kernel command line invocation"
 +	depends on INITRAMFS_WITH_RESCUE
 +	default y
 +	help
@@ -173,7 +173,7 @@
 +	  rootfs gets mounted, by giving 'rescue' at the boot command line.
 +
 +config INITRAMFS_WITH_BASH
-+	boolean "Use Bourne Again shell in rescue mode"
++	bool "Use Bourne Again shell in rescue mode"
 +	depends on INITRAMFS_WITH_RESCUE
 +	select INITRAMFS_NEED_DYNLIB
 +	default n
@@ -181,7 +181,7 @@
 +	  Use a real shell instead of the tiny one in busybox.
 +
 +config INITRAMFS_WITH_FSTOOL
-+	boolean "Include file system check utilities"
++	bool "Include file system check utilities"
 +	depends on INITRAMFS_WITH_RESCUE
 +	default n
 +	help
@@ -191,12 +191,12 @@
 +	  from the disk to RAM as the kernel boots, each time.
 +
 +config INITRAMFS_WITH_XFS_SELECT
-+	boolean "Include XFS utilities"
++	bool "Include XFS utilities"
 +	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && XFS_FS=y
 +	default y
 +
 +config INITRAMFS_WITH_XFS
-+	boolean
++	bool
 +	depends on INITRAMFS_WITH_FSTOOL
 +	default y if INITRAMFS_FOR_ANY_ROOT && XFS_FS
 +	default y if INITRAMFS_WITH_XFS_SELECT
@@ -204,31 +204,31 @@
 +	select INITRAMFS_WITH_BASH
 +
 +config INITRAMFS_WITH_BTRFS_SELECT
-+	boolean "Include btrfs utilities"
++	bool "Include btrfs utilities"
 +	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && BTRFS_FS
 +	default y
 +
 +config INITRAMFS_WITH_BTRFS
-+	boolean
++	bool
 +	depends on INITRAMFS_WITH_FSTOOL
 +	default y if INITRAMFS_FOR_ANY_ROOT && BTRFS_FS
 +	default y if INITRAMFS_WITH_BTRFS_SELECT
 +	default n
 +
 +config INITRAMFS_WITH_EXTFS_SELECT
-+	boolean "Include ext4fs utilities"
++	bool "Include ext4fs utilities"
 +	depends on INITRAMFS_FOR_SOME_ROOT && INITRAMFS_WITH_FSTOOL && EXT4_FS
 +	default y
 +
 +config INITRAMFS_WITH_EXTFS
-+	boolean
++	bool
 +	depends on INITRAMFS_WITH_FSTOOL
 +	default y if INITRAMFS_FOR_ANY_ROOT && EXT4_FS
 +	default y if INITRAMFS_WITH_EXTFS_SELECT
 +	default n
 +
 +config INITRAMFS_WITH_STATIC
-+	boolean "Prefer static binaries"
++	bool "Prefer static binaries"
 +	depends on INITRAMFS_AUTO
 +	default n
 +	help
@@ -238,7 +238,7 @@
 +	  binary will be used, and any required libraries will be included.
 +
 +config INITRAMFS_WITH_STATIC_ONLY
-+	boolean "Use only static binaries"
++	bool "Use only static binaries"
 +	depends on INITRAMFS_WITH_STATIC && !INITRAMFS_NEED_DYNLIB
 +	default n
 +	help
@@ -246,7 +246,7 @@
 +	  library dependencies reported by `ldd`.
 +
 +config INITRAMFS_WITH_STATIC_MUST
-+	boolean "Fail if static binaries are missing"
++	bool "Fail if static binaries are missing"
 +	depends on INITRAMFS_WITH_STATIC_ONLY
 +	default n
 +	help

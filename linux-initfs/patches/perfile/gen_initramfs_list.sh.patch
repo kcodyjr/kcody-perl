@@ -1,5 +1,5 @@
---- linux/scripts/gen_initramfs_list.sh.orig	2017-11-10 01:50:25.685322259 -0500
-+++ linux/scripts/gen_initramfs_list.sh	2017-11-10 02:24:42.707363462 -0500
+--- linux/usr/gen_initramfs_list.sh.orig	2017-11-10 01:50:25.685322259 -0500
++++ linux/usr/gen_initramfs_list.sh	2017-11-10 02:24:42.707363462 -0500
 @@ -192,7 +192,21 @@
  # if a regular file is specified assume it is in gen_initramfs format
  input_file() {
