@@ -2,80 +2,55 @@ package Linux::InitFS::Kernel;
 use warnings;
 use strict;
 
+use base qw( Exporter );
+our @EXPORT = qw( &detect_kconfig_here );
+
 use Cwd;
 
-my %CONFIG;
+
+my %kconfig_path;
+
+
+sub __detect_kconfig_here {
+	my ( $path ) = @_;
+
+	my $full = $path . '/Kconfig';
+
+	if ( -f $full and -r $full ) {
+		return $path;
+	}
+
+	my @part = split /\//, $path;
+	pop @part;
+
+	return unless scalar @part;
+
+	my $next = join( '/', @part );
+
+	return __detect_kconfig_here( $next );
+}
 
 
 sub _detect_kconfig_here {
 	my ( $path ) = @_;
 
-	return unless $path;
+	return undef unless $path;
 
-	my $full = $path . '/.config';
-
-	if ( -f $full and -r $full ) {
-		return $full;
+	if ( $kconfig_path{$path} ) {
+		return $kconfig_path{$path};
 	}
 
-	my @part = split /\//, $path;
-	pop @part;
-	my $next = join( '/', @part );
+	my $rv = __detect_kconfig_here( $path )
+		or return undef;
 
-	return _detect_kconfig_here( $next );
-}
-
-sub _detect_kconfig_proc {
-}
-
-sub _detect_kconfig_src {
-
-	return _detect_kconfig_here( '/usr/src/linux' );
+	return $kconfig_path{$path} = $rv;
 }
 
 
-sub _import_kernel_config {
+sub detect_kconfig_here(;$) {
 	my ( $path ) = @_;
 
-	my $rc = open my $fh, '<', $path;
-	return unless defined $rc;
-
-	while ( <$fh> ) {
-		chomp;
-		s/#.*//;
-		s/^\s+//;
-		s/\s+$//;
-		next unless $_;
-
-		my ( $key, $val ) = split /=/;
-	
-		$CONFIG{$key} = $val;
-
-	}
-
-	return keys %CONFIG;
-}
-
-
-sub detect_config() {
-
-	my $file   = _detect_kconfig_here( getcwd() );
-	   $file ||= _detect_kconfig_proc();
-	   $file ||= _detect_kconfig_src();
-
-	return unless $file;
-
-	return _import_kernel_config( $file );
-}
-
-sub feature_enabled($) {
-	my ( $cfgkey ) = @_;
-
-	$cfgkey = 'CONFIG_' . $cfgkey;
-
-	return unless $CONFIG{$cfgkey};
-
-	return $CONFIG{$cfgkey} eq 'y';
+	return _detect_kconfig_here( $path || getcwd() );
 }
 
 

@@ -19,19 +19,34 @@ use strict;
 #       b. By calling the collection of objects' class
 
 use Linux::InitFS;
+use Linux::InitFS::Kernel;
 
+# create a context
+my $ctx = Linux::InitFS->new;
 
-# go looking for a kernel config
-detect_kernel_config
-	or die "Unable to locate kernel sources.\n";
+# pick up globals and defaults
+$ctx->cfg->import_initfs_config;
+
+# go looking for the current kernel tree if any
+my $here = detect_kconfig_here
+	or die "We are not being run from a kernel source tree.\n";
+
+# pick up tree-specific values
+$ctx->cfg->import_initfs_config( $here );
+
+# import the kernel config
+$ctx->cfg->import_kernel_config( $here )
+	or die "Unable to import Kconfig, have you run make menuconfig?";
 
 # see that we're in any way useful
-kernel_feature_enabled 'BLK_DEV_INITRD'
+$ctx->cfg->kernel_feature_enabled( 'BLK_DEV_INITRD' )
 	or die "Initial root filesystems are disabled.\n";
 
 # go looking for features
-enable_initfs_features
-	or die "Error while enabling initfs features.\n";
+$ctx->analyze_enabled_features
+	or die "Error while analyzing enabled initfs features.\n";
 
 # spit it out...
-exit( generate_initfs_spec ? 0 : 1 );
+my $rv = $ctx->generate_cpio_spec;
+
+exit( $rv ? 0 : 1 );

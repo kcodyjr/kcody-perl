@@ -8,14 +8,8 @@ use Linux::InitFS::Spec;
 my $BASE = File::ShareDir::dist_dir( 'Linux-InitFS' );
 
 
-sub is_enabled($) {
-	my ( $this, $feature ) = @_;
-
-	$feature ||= $this;
-
-	return Linux::InitFS::Kernel::feature_enabled( $feature );
-}
-
+###############################################################################
+# helper functions
 
 sub locate_host_prog($) {
 	my ( $prog ) = @_;
@@ -51,10 +45,14 @@ sub translate_args(@) {
 	return %rv;
 }
 
-sub enable_feature($);
 
-sub enable_feature_item($@) {
-	my ( $name, $kind, $path, @args ) = @_;
+###############################################################################
+# add entries to $ctx for each file/symlink/devnode/etc in the given feature
+
+sub enable_feature($$$);
+
+sub enable_feature_item($$$@) {
+	my ( $class, $ctx, $name, $kind, $path, @args ) = @_;
 	my %more;
 
 	if ( $kind eq 'device' ) {
@@ -63,56 +61,56 @@ sub enable_feature_item($@) {
 		my $minor = shift @args;
 		%more = translate_args @args;
 		$path = '/dev/' . $path;
-		Linux::InitFS::Entry->new_nod( $path, $dtype, $major, $minor, %more );
+		Linux::InitFS::Entry->new_nod( $ctx, $path, $dtype, $major, $minor, %more );
 	}
 
 	elsif ( $kind eq 'termtype' ) {
-		Linux::InitFS::Entry->new_term_type( $path );
+		Linux::InitFS::Entry->new_term_type( $ctx, $path );
 	}
 
 	elsif ( $kind eq 'symlink' ) {
 		my $link = shift @args;
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_slink( $path, $link, %more );
+		Linux::InitFS::Entry->new_slink( $ctx, $path, $link, %more );
 	}
 
 	elsif ( $kind eq 'directory' ) {
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_dir( $path, %more );
+		Linux::InitFS::Entry->new_dir( $ctx, $path, %more );
 	}
 
 	elsif ( $kind eq 'mountpoint' ) {
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_mnt_point( $path, %more );
+		Linux::InitFS::Entry->new_mnt_point( $ctx, $path, %more );
 	}
 
 	elsif ( $kind eq 'host_file' ) {
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_host_file( $path, %more );
+		Linux::InitFS::Entry->new_host_file( $ctx, $path, %more );
 	}
 
 	elsif ( $kind eq 'host_program' ) {
 		%more = translate_args @args;
 		$path = locate_host_prog $path or return;
-		Linux::InitFS::Entry->new_host_prog( $path, %more );
+		Linux::InitFS::Entry->new_host_prog( $ctx, $path, %more );
 	}
 
 	elsif ( $kind eq 'init_file' ) {
 		my $from = locate_init_file $name, $path;
 		$path = shift @args;
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_file( $path, $from, %more );
+		Linux::InitFS::Entry->new_file( $ctx, $path, $from, %more );
 	}
 
 	elsif ( $kind eq 'init_program' ) {
 		my $from = locate_init_file $name, $path;
 		$path = shift @args;
 		%more = translate_args @args;
-		Linux::InitFS::Entry->new_prog( $path, $from, %more );
+		Linux::InitFS::Entry->new_prog( $ctx, $path, $from, %more );
 	}
 
 	elsif ( $kind eq 'requires' ) {
-		enable_feature $path;
+		enable_feature $class, $ctx, $path;
 	}
 
 	else {
@@ -122,18 +120,55 @@ sub enable_feature_item($@) {
 }
 
 
-sub enable_feature($) {
-	my ( $name ) = @_;
+sub enable_feature($$$) {
+	my ( $class, $ctx, $name ) = @_;
 
 	my $spec = Linux::InitFS::Spec->new( $name )
 		or return;
 
-	enable_feature_item( $name, @$_ ) for @$spec;
+	enable_feature_item( $class, $ctx, $name, @$_ ) for @$spec;
 
 }
 
-sub find_truth(@) {
-	my ( @spec ) = @_;
+
+###############################################################################
+# feature-wise truth tester
+
+sub is_enabled($$) {
+	my ( $cfg, $feature ) = @_;
+	my $rv;
+
+	if ( $feature =~ /:/ ) {
+		my ( $sect, $rest ) = split /:/, $feature;
+		my ( $name, $want ) = split /=/, $rest;
+		my $bool = not defined $want;
+		my $test;
+
+		$name ||= $rest;
+
+		if ( $sect eq 'cfg' ) {
+			$test = $cfg->initfs_feature_setting( $name );
+		}
+
+		else {
+			warn "ignoring $feature: unknown section $sect\n";
+			return;
+		}
+
+		$rv = $bool ? defined $test : $test eq $want;
+
+	}
+
+	else {
+		$rv = $cfg->kernel_feature_enabled( $feature );
+	}
+
+	return $rv;
+}
+
+
+sub find_truth($$@) {
+	my ( $class, $cfg, @spec ) = @_;
 	my $rv = 1;
 
 	while ( my $chk = shift @spec ) {
@@ -144,7 +179,7 @@ sub find_truth(@) {
 			$not = 1;
 		}
 
-		my $rc = is_enabled $chk;
+		my $rc = is_enabled $cfg, $chk;
 
 		if ( $not ) {
 			$rc = ! $rc;
@@ -156,22 +191,6 @@ sub find_truth(@) {
 	}
 
 	return $rv;
-}
-
-sub enable_features() {
-
-	my $feature = Linux::InitFS::Spec->new( 'initfs' );
-
-	foreach my $spec ( @$feature ) {
-		my $subsys = shift @$spec;
-
-		my $doit = find_truth @$spec;
-
-		enable_feature $subsys if $doit;
-
-	}
-
-	return 1;
 }
 
 

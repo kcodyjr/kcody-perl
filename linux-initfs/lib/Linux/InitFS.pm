@@ -4,31 +4,84 @@ use strict;
 
 use 5.10.0;
 
-our $VERSION = 0.1;
+our $VERSION = 0.2;
 
-use base 'Exporter';
-our @EXPORT = qw( detect_kernel_config
-                  enable_initfs_features
-                  generate_initfs_spec
-                  kernel_feature_enabled );
 
 use Linux::InitFS::Entry;
-use Linux::InitFS::Kernel;
+use Linux::InitFS::Config;
 use Linux::InitFS::Feature;
 
 
-sub generate_initfs_spec {
+sub new {
+	my ( $this ) = @_;
 
-	return Linux::InitFS::Entry->execute();
+	my $class = ref( $this ) || $this;
+
+	my $self = bless {}, $class;
+
+	# create the config context as well
+	$self->{config} = Linux::InitFS::Config->new
+		or return;
+
+	return $self;
 }
 
-{
-	no strict 'refs';
 
-	*{'Linux::InitFS::detect_kernel_config'} = *{'Linux::InitFS::Kernel::detect_config'}{CODE};
-	*{'Linux::InitFS::kernel_feature_enabled'} = *{'Linux::InitFS::Kernel::feature_enabled'}{CODE};
-	*{'Linux::InitFS::enable_initfs_features'} = *{'Linux::InitFS::Feature::enable_features'}{CODE};
+sub cfg {
+	my ( $self ) = @_;
 
+	return $self->{config};
 }
+
+
+sub add_entry {
+	my ( $self, $entry ) = @_;
+
+	return unless $entry;
+
+	$self->{entry} ||= {};
+
+	$self->{entry}->{$entry->label} = $entry;
+
+	return 1;
+}
+
+
+sub has_entry {
+	my ( $self, $label ) = @_;
+
+	return unless $label;
+	return unless $self->{entry};
+
+	return $self->{entry}->{$label};
+}
+
+
+sub analyze_enabled_features {
+	my ( $self ) = @_;
+
+	my $initfs = Linux::InitFS::Spec->new( 'initfs' );
+		# FIXME or die?
+
+	foreach my $spec ( @$initfs ) {
+		my $subsys = shift @$spec;
+
+		my $doit = Linux::InitFS::Feature->find_truth( $self->cfg, @$spec );
+
+		Linux::InitFS::Feature->enable_feature( $self, $subsys )
+			if $doit;
+
+	}
+
+	return 1;
+}
+
+
+sub generate_cpio_spec($) {
+	my ( $self ) = @_;
+
+	return Linux::InitFS::Entry->execute( $self->{entry} );
+}
+
 
 1;

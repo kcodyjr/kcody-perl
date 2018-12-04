@@ -2,17 +2,12 @@ package Linux::InitFS::Entry;
 use warnings;
 use strict;
 
-my %ENTRIES = ();
-
-my $WANT_STATIC = undef;
-my $ONLY_STATIC = undef;
-
 
 ###############################################################################
 # base constructor
 
-sub new {
-	my ( $this, %args ) = @_;
+sub entry {
+	my ( $this, $ctx, %args ) = @_;
 
 	my $class = ref( $this ) || $this;
 
@@ -21,20 +16,27 @@ sub new {
 	return undef unless $obj->{path};
 	return undef unless $obj->{type};
 
-	if ( my $rv = $ENTRIES{$obj->{path}} ) {
+	if ( my $rv = $ctx->has_entry( $obj->{path} ) ) {
 		# FIXME sometimes this is bad...
 		return $rv;
 	}
 
-	return undef unless $obj->_init_dirs();
+	return undef unless $obj->_init_dirs( $ctx );
 
 	if ( $obj->{type} eq 'file' ) {
-		return undef unless $obj->_init_prog_deps();
+		return undef unless $obj->_init_prog_deps( $ctx );
 	}
 
-	$ENTRIES{$obj->{path}} = $obj;
+	$ctx->add_entry( $obj );
 
 	return $obj;
+}
+
+
+sub label {
+	my ( $self ) = @_;
+
+	return $self->{path};
 }
 
 
@@ -42,16 +44,16 @@ sub new {
 # shortcut constructors
 
 sub new_dir {
-	my ( $class, $path, %args ) = @_;
+	my ( $class, $ctx, $path, %args ) = @_;
 
 	$args{type} = 'dir';
 	$args{path} = $path;
 
-	return $class->new( %args );
+	return $class->entry( $ctx, %args );
 }
 
 sub new_nod {
-	my ( $class, $path, $dtype, $major, $minor, %args ) = @_;
+	my ( $class, $ctx, $path, $dtype, $major, $minor, %args ) = @_;
 
 	$args{type} = 'nod';
 	$args{path} = $path;
@@ -59,18 +61,18 @@ sub new_nod {
 	$args{major} = $major;
 	$args{minor} = $minor;
 
-	return $class->new( %args );
+	return $class->entry( $ctx, %args );
 }
 
 sub new_file {
-	my ( $class, $path, $from, %args ) = @_;
+	my ( $class, $ctx, $path, $from, %args ) = @_;
 
 	if ( -l $from ) {
 
 		my $link = readlink $from
 			or return;
 
-		$class->new_slink( $path, $link );
+		$class->new_slink( $ctx, $path, $link );
 
 		unless ( $link =~ /\// ) {
 			my @parts = split /\//, $from;
@@ -79,11 +81,11 @@ sub new_file {
 			$link = join( '/', @parts );
 		}
 
-		return $class->new_host_file( $link, %args );
+		return $class->new_host_file( $ctx, $link, %args );
 	}
 
 	if ( -d $from ) {
-		return $class->new_dir( $path, %args );
+		return $class->new_dir( $ctx, $path, %args );
 	}
 
 	$args{type} = 'file';
@@ -94,17 +96,17 @@ sub new_file {
 		$args{mode} = -x $from ? 0755 : 0644;
 	}
 
-	return $class->new( %args );
+	return $class->entry( $ctx, %args );
 }
 
 sub new_slink {
-	my ( $class, $path, $from, %args ) = @_;
+	my ( $class, $ctx, $path, $from, %args ) = @_;
 
 	$args{type} = 'slink';
 	$args{path} = $path;
 	$args{from} = $from;
 
-	return $class->new( %args );
+	return $class->entry( $ctx, %args );
 }
 
 
@@ -112,52 +114,52 @@ sub new_slink {
 # high-level constructors
 
 sub new_prog {
-	my ( $class, $path, $from, %args ) = @_;
+	my ( $class, $ctx, $path, $from, %args ) = @_;
 
 	unless ( exists $args{mode} ) {
 		$args{mode} = 0755;
 	}
 
-	unless ( defined $WANT_STATIC ) {
-		$WANT_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC' );
-	}
+#	unless ( defined $WANT_STATIC ) {
+#		$WANT_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC' );
+#	}
 
-	if ( $WANT_STATIC ) {
-		my $static = $from . '.static';
-		$from = $static if -e $static;
-	}
+#	if ( $ctx->cfg->initfs_feature_setting( $WANT_STATIC ) {
+#		my $static = $from . '.static';
+#		$from = $static if -e $static;
+#	}
 
-	return $class->new_file( $path, $from, %args );
+	return $class->new_file( $ctx, $path, $from, %args );
 }
 
 sub new_host_file {
-	my ( $class, $path, %args ) = @_;
+	my ( $class, $ctx, $path, %args ) = @_;
 
-	return $class->new_file( $path, $path, %args );
+	return $class->new_file( $ctx, $path, $path, %args );
 }
 
 sub new_host_prog {
-	my ( $class, $path, %args ) = @_;
+	my ( $class, $ctx, $path, %args ) = @_;
 
-	return $class->new_prog( $path, $path, %args );
+	return $class->new_prog( $ctx, $path, $path, %args );
 }
 
 sub new_mnt_point {
-	my ( $class, $path, %args ) = @_;
+	my ( $class, $ctx, $path, %args ) = @_;
 
 	$args{mode} = 0000;
 
-	return $class->new_dir( $path, %args );
+	return $class->new_dir( $ctx, $path, %args );
 }
 
 sub new_term_type {
-	my ( $class, $type ) = @_;
+	my ( $class, $ctx, $type ) = @_;
 
 	my ( $char ) = ( $type =~ /^(\w)/ );
 
 	my $file = '/etc/terminfo/' . $char . '/' . $type;
 
-	return $class->new_host_file( $file );
+	return $class->new_host_file( $ctx, $file );
 }
 
 
@@ -165,7 +167,7 @@ sub new_term_type {
 # initializers
 
 sub _init_dirs {
-	my ( $this ) = @_;
+	my ( $this, $ctx ) = @_;
 
 	my ( @parts ) = split /\//, $this->{path};
 
@@ -176,7 +178,7 @@ sub _init_dirs {
 
 		next unless $temp;
 
-		$this->new_dir( $temp );
+		$this->new_dir( $ctx, $temp );
 
 	}
 
@@ -184,7 +186,7 @@ sub _init_dirs {
 }
 
 sub _init_prog_deps_dynlib {
-	my ( $this, $file ) = @_;
+	my ( $this, $ctx, $file ) = @_;
 
 	my $found = 0;
 
@@ -198,7 +200,7 @@ sub _init_prog_deps_dynlib {
 
 		next unless $_;
 
-		$this->new_host_file( $_, mode => /ld-linux/ ? 0755 : 0644 );
+		$this->new_host_file( $ctx, $_, mode => /ld-linux/ ? 0755 : 0644 );
 
 		$found++;
 
@@ -208,31 +210,26 @@ sub _init_prog_deps_dynlib {
 }
 
 #sub _init_prog_deps_shell {
-#	my ( $this, $file ) = @_;
+#	my ( $this, $ctx, $file ) = @_;
 #
 #	my $rc = open my $fh, '<', $file;
 #	return unless defined $rc;
 #
 #	my $txt = <$fh>;
-#	my ( $interpreter ) = ( $txt =~ /^#!([^\s]+)/ );
-#	return unless $interpreter;
+#	my ( $interp ) = ( $txt =~ /^#!([^\s]+)/ );
+#	return unless $interp;
 #
-#	$this->new_host_prog( $interpreter );
+#	$this->new_host_prog( $ctx, $interp );
 #
 #	return 1;
 #}
 
 sub _init_prog_deps {
-	my ( $this ) = @_;
+	my ( $this, $ctx ) = @_;
 
 	my $run = $this->{from};
 
-	unless ( defined $ONLY_STATIC ) {
-		$ONLY_STATIC = Linux::InitFS::Kernel::feature_enabled( 'INITRAMFS_WITH_STATIC_ONLY' );
-	}
-
-	return 1 if $this->_init_prog_deps_dynlib( $run );
-#	return 1 if $this->_init_prog_deps_shell( $run );
+	return 1 if $this->_init_prog_deps_dynlib( $ctx, $run );
 	return 1;
 }
 
@@ -307,9 +304,9 @@ sub print_entry($$) {
 # output-all method
 
 sub execute {
-	my ( $this ) = @_;
+	my ( $class, $entries ) = @_;
 
-	my @order = sort { $a->{path} cmp $b->{path} } values %ENTRIES;
+	my @order = sort { $a->{path} cmp $b->{path} } values %$entries;
 
 	my ( @dirs, @devs, @rest );
 
