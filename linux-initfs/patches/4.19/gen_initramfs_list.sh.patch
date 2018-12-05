@@ -1,5 +1,6 @@
---- linux/usr/gen_initramfs_list.sh.orig	2017-11-10 01:50:25.685322259 -0500
-+++ linux/usr/gen_initramfs_list.sh	2017-11-10 02:24:42.707363462 -0500
+diff -ruN linux-4.19.6-gentoo.orig/usr/gen_initramfs_list.sh linux-4.19.6-gentoo/usr/gen_initramfs_list.sh
+--- linux-4.19.6-gentoo.orig/usr/gen_initramfs_list.sh	2018-10-22 02:37:37.000000000 -0400
++++ linux-4.19.6-gentoo/usr/gen_initramfs_list.sh	2018-12-03 23:09:42.115751628 -0500
 @@ -192,7 +192,21 @@
  # if a regular file is specified assume it is in gen_initramfs format
  input_file() {
@@ -21,5 +22,5 @@
 +		fi
 +	elif [ -f "$1" ]; then
  		${dep_list}header "$1"
- 		is_cpio="$(echo "$1" | sed 's/^.*\.cpio\(\..*\)\?/cpio/')"
+ 		is_cpio="$(echo "$1" | sed 's/^.*\.cpio\(\..*\)\{0,1\}/cpio/')"
  		if [ $2 -eq 0 -a ${is_cpio} = "cpio" ]; then
