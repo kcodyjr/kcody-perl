@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+#
+# initfs_kernel_patch - apply the needed Kconfig patches
+#
+
+use File::ShareDir;
+use Linux::InitFS::Kernel;
+
+
+###############################################################################
+# go looking for the root of the current kernel tree if any
+
+{
+	my $here = detect_kconfig_here
+		or die "We are not being run from a kernel source tree.\n";
+
+	chdir $here;
+}
+
+
+###############################################################################
+# check whether we're already patched
+
+{
+	open my $fh, 'usr/Kconfig'
+		or die "usr/Kconfig missing: $!";
+
+	while ( my $line = <$fh> ) {
+		if ( grep /Linux::InitFS/, $line ) {
+			warn "This kernel tree has already been patched.\n";
+			exit 0;
+		}
+	}
+
+}
+
+
+###############################################################################
+# locate the correct patch directory
+
+my $PATH = File::ShareDir::dist_dir( 'Linux-InitFS' );
+
+{
+	my $vers = `make -s kernelversion`;
+	chomp $vers;
+
+	my @vers = split /[\.\-\_]/, $vers;
+
+	warn "Patching Linux kernel version $vers sources.\n";
+
+	$PATH .= '/patches/' . $vers[0] . '.' . $vers[1];
+
+}
+
+# FIXME: versioned search
+
+
+###############################################################################
+# enumerate the available patches
+
+my %PATCHES;
+
+opendir my $dh, "$PATH";
+
+while ( readdir $dh ) {
+	next if /^\./;
+	next unless /\.patch$/;
+	chomp;
+
+	$PATCHES{$_} = join( '/', $PATH, $_ );
+
+}
+
+
+###############################################################################
+# apply the available patches
+
+my $rv = 1;
+
+foreach my $patch ( values %PATCHES ) {
+	my $rc = system( "patch -p1 -f --dry-run < $patch" ) >> 8;
+	if ( $rc != 0 ) {
+		$rv = 0;
+	}
+}
+
+unless ( $rv ) {
+	warn "FAILED to test-apply patches, aborting.\n";
+	warn "Paste the above output to a message to the developer.\n";
+	exit 1;
+}
+
+foreach my $patch ( values %PATCHES ) {
+	my $rc = system( "patch -p1 -f < $patch" ) >> 8;
+	if ( $rc != 0 ) {
+		$rv = 0;
+	}
+}
+
+exit( $rv ? 0 : 1 );
