@@ -36,7 +36,8 @@ WriteMakefile (
 	INSTALLSCRIPT              => '/usr/libexec',
 	INSTALLSITESCRIPT          => '/usr/libexec',
 	INSTALLVENDORSCRIPT        => '/usr/libexec',
-	EXE_FILES                  => [ 'gen_init_cpio_spec' ]
+	EXE_FILES                  => [ 'gen_init_cpio_spec',
+	                                'initfs_kernel_patch' ]
 
 );
 
