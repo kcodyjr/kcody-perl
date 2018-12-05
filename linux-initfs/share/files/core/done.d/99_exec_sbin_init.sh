@@ -1,0 +1,3 @@
+
+exec chroot $ROOTMNT $INITBIN
+

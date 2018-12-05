@@ -189,8 +189,6 @@ do
 done
 unset f
 
-exec chroot $ROOTMNT $INITBIN
-
 echo BUG: got to end of rootfs:/init
 exit # panic - should never get here
 
