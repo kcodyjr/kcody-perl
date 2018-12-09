@@ -1,21 +1,25 @@
 #!/bin/sh
+# vim: ts=8
+#
+# Linux::InitFS first-run script
+#
+# All we know for sure we want to do is parse command line options.
+# We may not even be on a mission to find a filesystem and exec an init,
+# or kexec a next kernel; this may be a full in-kernel runtime.
+#
+# Thus, everything is left to scriptlets that get dropped in place
+# by various specs/*.cfg files when the kernel is built.
+#
+
 
 ###############################################################################
 # capture boot process for troubleshooting
 
+# would be nice to verify this directory exists
+# but we may not have [[ or [ or test at this point
+
 exec 2>/run/initfs.trc
 set -x
-
-
-###############################################################################
-# program variables
-
-ROOTMNT='/mnt/rootfs'
-INITBIN='/sbin/init'
-ROOTDEV='LABEL=root'
-MNTFLAG='ro'
-
-GETARGS='get_arg_core'
 
 
 ###############################################################################
@@ -31,6 +35,14 @@ done
 
 
 ###############################################################################
+# make sure certain variables do not get tampered with
+
+# env.d should not register arg handlers
+# init.d is supposed to do that
+unset GETARGS
+
+
+###############################################################################
 # global kernel command line functions
 
 import_handler() {
@@ -41,6 +53,7 @@ import_handler() {
 }
 
 import_cmdline() {
+
 	local arg func
 
 	for arg in $(cat /proc/cmdline)
@@ -51,121 +64,13 @@ import_cmdline() {
 		done
 	done
 
-	if [ -n "$ROOTFLG" ]
-	then
-		MNTOPTS="${MNTFLAG},${ROOTFLG}"
-	else
-		MNTOPTS=$MNTFLAG
-	fi
-
-}
-
-
-###############################################################################
-# core kernel argument handler
-
-get_arg_core() {
-	local arg="$1"
-
-	case $arg in
-
-		ro)
-			MNTFLAG=ro
-			;;
-		rw)
-			MNTFLAG=rw
-			;;
-
-		root=*)
-			ROOTDEV=${arg#root=}
-			;;
-
-		rootflags=*)
-			ROOTFLG=${arg#rootflags=}
-			;;
-
-		init=*)
-			INITBIN=${arg#init=}
-			;;
-
-	esac
-}
-
-
-###############################################################################
-# ensure the root device is accessible
-
-# try it
-mount_rootfs() {
-	local fstype
-
-	fstype=$(blkid $NEXTDEV | sed 's/.*TYPE=//;s/^"//;s/"$//')
-
-	if [ -z "$fstype" ]
-	then
-		return 1
-	fi
-
-	mount -t $fstype -o $MNTOPTS $NEXTDEV $ROOTMNT
-
-	return $?
-}
-
-# probe it
-load_rootdev() {
-	local f
-
-	for f in /lib/initfs/load.d/*.sh
-	do
-		if [ -r $f ]
-		then
-			. $f
-		fi
-		is_rootfs_mounted && break
-	done
-
-}
-
-# test for it
-is_rootfs_mounted() {
-	grep -q $ROOTMNT /etc/mtab
-}
-
-# highlevel: the whole sequence
-mount_rootfs_effort() {
-
-	if [ -z $NEXTDEV ]
-	then
-		NEXTDEV=$ROOTDEV
-	fi
-
-	mount_rootfs
-
-	if ! is_rootfs_mounted
-	then
-		local f
-		for f in /lib/initfs/load.d/*.sh
-		do
-			if [ -r $f ]
-			then
-				. $f
-			fi
-			is_rootfs_mounted && break
-		done
-	fi
-
-	if ! is_rootfs_mounted
-	then
-		mount_rootfs
-		return $?
-	fi
-
-	return 0
 }
 
 
 ###############################################################################
 # MAIN BLOCK
+
+# initialize subsystems and load arg handlers
 
 for f in /lib/initfs/init.d/*.sh
 do
@@ -176,9 +81,20 @@ do
 done
 unset f
 
+# parse kernel command line
+
 import_cmdline
 
-mount_rootfs_effort
+# run the provided main function
+
+if ! type initfs_main_function | grep -q 'function'
+then
+	echo BUG: rootfs:/init did not define initfs_main_function
+else
+	initfs_main_function
+fi
+
+# shutdown subsystems and do whatever we're going to do
 
 for f in /lib/initfs/done.d/*.sh
 do
@@ -188,6 +104,8 @@ do
 	fi
 done
 unset f
+
+# the last done.d item should have prevented us getting here
 
 echo BUG: got to end of rootfs:/init
 exit # panic - should never get here
