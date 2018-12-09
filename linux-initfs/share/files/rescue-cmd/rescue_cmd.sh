@@ -1,7 +1,7 @@
 
 unset rescue_doit
 
-if is_rootfs_mounted
+if findfs_is_mounted
 then
 	rescue_doit=$RESCUE
 

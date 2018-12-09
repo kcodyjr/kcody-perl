@@ -2,9 +2,9 @@
 ###############################################################################
 # make the user mount the rootfs manually
 
-ROOTFS_NOT_FOUND=rootfs_not_found_rescue
+FALLBACK_ACTION="fallback_action_rescue"
 
-rootfs_not_found_rescue() {
+fallback_action_rescue() {
 
 	while true
 	do
@@ -12,21 +12,21 @@ rootfs_not_found_rescue() {
 		echo
 		echo '*** ERROR ***'
 		echo
-		echo 'Root filesystem not found.'
+		echo 'Filesystem not found.'
 		echo
-		echo 'Mount it to /mnt/rootfs manually, then exit this shell.'
+		echo 'Mount it manually, then exit this shell.'
 		echo
 
 		rescue_shell
 
-		if is_rootfs_mounted
+		if findfs_is_mounted
 		then
 			break
 		fi
 
-		mount_rootfs
+		findfs_try_mount
 
-		if is_rootfs_mounted
+		if findfs_is_mounted
 		then
 			break
 		fi

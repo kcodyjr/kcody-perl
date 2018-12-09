@@ -2,15 +2,15 @@
 ###############################################################################
 # reboot the system if we cannot find the rootfs
 
-ROOTFS_NOT_FOUND=rootfs_not_found_reboot
+FALLBACK_ACTION=fallback_action_reboot
 
-rootfs_not_found_reboot() {
+fallback_action_reboot() {
 
 	echo
 	echo
 	echo '*** FATAL ***'
 	echo
-	echo 'Unable to locate root filesystem' $ROOTDEV
+	echo 'Unable to locate filesystem'
 	echo
 	echo 'Rebooting.'
 	echo

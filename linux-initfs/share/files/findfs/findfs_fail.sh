@@ -1,17 +1,17 @@
 
-if ! is_rootfs_mounted
+if ! findfs_is_mounted
 then
 
-	if [ -n "$ROOTFS_NOT_FOUND" ]
+	if [ -n "$FALLBACK_ACTION" ]
 	then
-		$ROOTFS_NOT_FOUND
+		$FALLBACK_ACTION
 	else
 		echo 'BUG: do not have a failure handler'
 	fi
 
 fi
 
-if ! is_rootfs_mounted
+if ! findfs_is_mounted
 then
 	exit # panic
 fi
