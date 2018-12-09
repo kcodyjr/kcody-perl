@@ -1,11 +1,24 @@
 
 findfs_mount_is_valid() {
 
-	if [ ! -x "${FINDFS_MNT}/${ROOTFS_BIN}" ]
+	if [ -n "$ROOTFS_BIN" ]
 	then
-		return 1
+		if [ -x "${FINDFS_MNT}/${ROOTFS_BIN}" ]
+		then
+			return 0
+		fi
+
+	else
+		for bin in /sbin/init /etc/init /bin/init /bin/sh
+		do
+			if [ -x "${FINDFS_MNT}${bin}" ]
+			then
+				ROOTFS_BIN="$bin"
+				return 0
+			fi
+		done
 	fi
 
-	return 0
+	return 1
 }
 
