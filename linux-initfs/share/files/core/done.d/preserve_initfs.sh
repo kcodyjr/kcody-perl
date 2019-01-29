@@ -1,7 +1,10 @@
 
-if [ -d ${FINDFS_MNT}/mnt/initfs ]
+INITFS_MNT="${FINDFS_MNT}/mnt/initfs"
+
+if [ -d "$INITFS_MNT" ]
 then
-	mount -o bind / ${FINDFS_MNT}/mnt/initfs
-	mount -o ro,remount ${FINDFS_MNT}/mnt/initfs
+	mount -o bind / "$INITFS_MNT"
+	mount -o ro,remount "$INITFS_MNT"
+	chmod 750 "$INITFS_MNT"
 fi
 
