@@ -47,6 +47,8 @@ findfs_mount_args() {
 
 	echo -n "-t $fstype "
 
+	echo -n "-o "
+
 	echo -n "$FINDFS_WRI"
 
 	if [ -n "$FINDFS_FLG" ]
