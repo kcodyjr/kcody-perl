@@ -1,10 +1,9 @@
 
 doit=nonempty
 
-if [ -z "$FINDFS_MNT" ]
+if [ -z "$ROOTFS_BIN" ]
 then
-	echo BUG: FINDFS_MNT empty in rootfs_exec
-	unset doit
+	findfs_mount_is_valid
 fi
 
 if [ -z "$ROOTFS_BIN" ]
@@ -13,15 +12,18 @@ then
 	unset doit
 fi
 
-if [ -n "$doit" ]
+if [ -z "$FINDFS_MNT" ]
 then
-	exec chroot "$FINDFS_MNT" "$ROOTFS_BIN"
+	echo BUG: FINDFS_MNT empty in rootfs_exec
+	unset doit
+fi
 
-	echo BUG: returned from exec chroot call
-	halt
+if [ -z "$doit" ]
+then
+	echo BUG: insufficient parameters in rootfs_exec
 
 else
-	echo BUG: insufficient parameters in rootfs_exec
-	halt
+	exec chroot "$FINDFS_MNT" "$ROOTFS_BIN"
+	echo SEVERE: returned from "exec chroot '$FINDFS_MNT' '$ROOTFS_BIN'" >&2
 fi
 

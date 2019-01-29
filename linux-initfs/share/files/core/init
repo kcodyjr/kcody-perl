@@ -15,8 +15,10 @@
 ###############################################################################
 # capture boot process for troubleshooting
 
-# would be nice to verify this directory exists
-# but we may not have [[ or [ or test at this point
+if ! /bin/busybox test -d /run
+then
+	/bin/busybox mkdir /run
+fi
 
 exec 2>/run/initfs.trc
 set -x
@@ -107,34 +109,15 @@ unset f
 
 
 ###############################################################################
-# FAILURE HANDLER
+# LAST DITCH FAILURE HANDLER
 
 # the last done.d item should have prevented us getting here
+# but a kernel panic would clobber any debug messages
 
 echo
 echo BUG: got to end of rootfs:/init
-
-if type rescue_shell >/dev/null 2>&1
-then
-	echo
-	echo Opening rescue shell.
-	echo When it exits, the system will reboot.
-	echo
-
-	rescue_shell
-
-fi
-
 echo
-echo -n Rebooting in 5
+echo Halting system.
 
-for i in 4 3 2 1 now
-do
-	echo -n ", $i"
-done
-
-echo "."
-echo
-
-reboot -f
+halt -f
 
