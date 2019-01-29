@@ -27,9 +27,9 @@ set -x
 
 for f in /etc/env.d/*.sh
 do
-	if [ -r $f ]
+	if [ -r "$f" ]
 	then
-		. $f
+		. "$f"
 	fi
 done
 
@@ -74,9 +74,9 @@ import_cmdline() {
 
 for f in /lib/initfs/init.d/*.sh
 do
-	if [ -r $f ]
+	if [ -r "$f" ]
 	then
-		. $f
+		. "$f"
 	fi
 done
 unset f
@@ -98,15 +98,43 @@ fi
 
 for f in /lib/initfs/done.d/*.sh
 do
-	if [ -r $f ]
+	if [ -r "$f" ]
 	then
-		. $f
+		. "$f"
 	fi
 done
 unset f
 
+
+###############################################################################
+# FAILURE HANDLER
+
 # the last done.d item should have prevented us getting here
 
+echo
 echo BUG: got to end of rootfs:/init
-exit # panic - should never get here
+
+if type rescue_shell >/dev/null 2>&1
+then
+	echo
+	echo Opening rescue shell.
+	echo When it exits, the system will reboot.
+	echo
+
+	rescue_shell
+
+fi
+
+echo
+echo -n Rebooting in 5
+
+for i in 4 3 2 1 now
+do
+	echo -n ", $i"
+done
+
+echo "."
+echo
+
+reboot -f
 

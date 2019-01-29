@@ -18,10 +18,10 @@ then
 	exec chroot "$FINDFS_MNT" "$ROOTFS_BIN"
 
 	echo BUG: returned from exec chroot call
-	exit # panic
+	halt
 
 else
 	echo BUG: insufficient parameters in rootfs_exec
-	exit # panic
+	halt
 fi
 

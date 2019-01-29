@@ -3,7 +3,7 @@ findfs_mount_is_valid() {
 
 	if [ -n "$ROOTFS_BIN" ]
 	then
-		if [ -x "${FINDFS_MNT}/${ROOTFS_BIN}" ]
+		if [ -x "${FINDFS_MNT}${ROOTFS_BIN}" ]
 		then
 			return 0
 		fi
