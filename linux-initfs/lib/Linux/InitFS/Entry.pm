@@ -46,6 +46,8 @@ sub label {
 sub new_dir {
 	my ( $class, $ctx, $path, %args ) = @_;
 
+	return if $path =~ /^\/lib\d+/;
+
 	$args{type} = 'dir';
 	$args{path} = $path;
 
@@ -66,6 +68,10 @@ sub new_nod {
 
 sub new_file {
 	my ( $class, $ctx, $path, $from, %args ) = @_;
+
+	if ( $path =~ /^\/lib\d+\// ) {
+		$path =~ s/^\/lib\d+\//\/lib\//;
+	}
 
 	if ( -l $from ) {
 
