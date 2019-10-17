@@ -1,0 +1,26 @@
+diff -ruN linux-4.19.6-gentoo.orig/usr/gen_initramfs_list.sh linux-4.19.6-gentoo/usr/gen_initramfs_list.sh
+--- linux-4.19.6-gentoo.orig/usr/gen_initramfs_list.sh	2018-10-22 02:37:37.000000000 -0400
++++ linux-4.19.6-gentoo/usr/gen_initramfs_list.sh	2018-12-03 23:09:42.115751628 -0500
+@@ -192,7 +192,21 @@
+ # if a regular file is specified assume it is in gen_initramfs format
+ input_file() {
+ 	source="$1"
+-	if [ -f "$1" ]; then
++	if [ -x "$1" ]; then
++		${dep_list}header "$1"
++		if [ -z ${dep_list} ]; then
++			print_mtime "$1" >> ${output}
++			"$1" >> ${output}
++		else
++			echo ".config \\"
++			echo "$1 \\"
++			"$1" | while read type dir file perm ; do
++				if [ "$type" = "file" ]; then
++					echo "$file \\";
++				fi
++			done
++		fi
++	elif [ -f "$1" ]; then
+ 		${dep_list}header "$1"
+ 		is_cpio="$(echo "$1" | sed 's/^.*\.cpio\(\..*\)\{0,1\}/cpio/')"
+ 		if [ $2 -eq 0 -a ${is_cpio} = "cpio" ]; then
