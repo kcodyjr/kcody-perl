@@ -1,0 +1,106 @@
+diff -ruN linux-5.10.69-orig/usr/Kconfig linux-5.10.69/usr/Kconfig
+--- linux-5.10.69-orig/usr/Kconfig	2021-09-26 08:09:02.000000000 -0400
++++ linux-5.10.69/usr/Kconfig	2021-09-28 13:38:59.146541329 -0400
+@@ -3,8 +3,40 @@
+ # Configuration for initramfs
+ #
+ 
++choice
++	prompt "Built-in initramfs"
++	depends on BLK_DEV_INITRD
++	help
++	  This option allows you to build an initramfs directly into the
++	  kernel, so you needn't load one through the bootloader. You still
++	  can, though, and the second will be laid atop the first before
++	  /init (or $rdinit) is called.
++
++config INITRAMFS_NONE
++	bool "Do not build-in an early userspace"
++	help
++	  Do not include any compiled-in initramfs contents.
++
++config INITRAMFS_PERL
++	bool "Use Linux::InitFS early userspace"
++	help
++	  Use an auto-generated initramfs, and build it into the
++	  kernel binary. It will include the correct early userspace
++	  components to support whatever options you've compiled-in to
++	  this kernel. Note, "Linux::InitFS" from CPAN is required.
++
++config INITRAMFS_CUSTOM
++	bool "Use custom early userspace"
++	help
++	  Specify a directory to include as a built-in initramfs, or a
++	  text file specifying the cpio contents of such, or a program
++	  emitting such specification on its stdout.
++
++endchoice
++
+ config INITRAMFS_SOURCE
+ 	string "Initramfs source file(s)"
++	depends on INITRAMFS_CUSTOM
+ 	default ""
+ 	help
+ 	  This can be either a single cpio archive with a .cpio suffix or a
+@@ -22,9 +54,20 @@
+ 
+ 	  If you are not sure, leave it blank.
+ 
++config INITRAMFS_SOURCE
++	string
++	depends on INITRAMFS_PERL
++	default "/usr/libexec/gen_init_cpio_spec"
++
++config INITRAMFS_BUILT_IN
++	bool
++	depends on BLK_DEV_INITRD
++	default y if INITRAMFS_SOURCE!=""
++	default n
++
+ config INITRAMFS_FORCE
+ 	bool "Ignore the initramfs passed by the bootloader"
+-	depends on CMDLINE_EXTEND || CMDLINE_FORCE
++	depends on INITRAMFS_BUILT_IN
+ 	help
+ 	  This option causes the kernel to ignore the initramfs image
+ 	  (or initrd image) passed to it by the bootloader. This is
+@@ -34,7 +77,7 @@
+ 
+ config INITRAMFS_ROOT_UID
+ 	int "User ID to map to 0 (user root)"
+-	depends on INITRAMFS_SOURCE!=""
++	depends on INITRAMFS_BUILT_IN
+ 	default "0"
+ 	help
+ 	  If INITRAMFS_SOURCE points to a directory, files owned by this UID
+@@ -44,7 +87,7 @@
+ 
+ config INITRAMFS_ROOT_GID
+ 	int "Group ID to map to 0 (group root)"
+-	depends on INITRAMFS_SOURCE!=""
++	depends on INITRAMFS_BUILT_IN
+ 	default "0"
+ 	help
+ 	  If INITRAMFS_SOURCE points to a directory, files owned by this GID
+@@ -52,6 +95,8 @@
+ 
+ 	  If you are not sure, leave it set to "0".
+ 
++menu "Initramfs/initrd compression support"
++
+ config RD_GZIP
+ 	bool "Support initial ramdisk/ramfs compressed using gzip"
+ 	default y
+@@ -109,9 +154,11 @@
+ 	  Support loading of a ZSTD encoded initial ramdisk or cpio buffer.
+ 	  If unsure, say N.
+ 
++endmenu
++
+ choice
+ 	prompt "Built-in initramfs compression mode"
+-	depends on INITRAMFS_SOURCE != ""
++	depends on INITRAMFS_BUILT_IN
+ 	help
+ 	  This option allows you to decide by which algorithm the builtin
+ 	  initramfs will be compressed.  Several compression algorithms are

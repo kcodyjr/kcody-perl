@@ -1,0 +1,27 @@
+diff -ruN linux-5.10.69-orig/usr/gen_initramfs.sh linux-5.10.69/usr/gen_initramfs.sh
+--- linux-5.10.69-orig/usr/gen_initramfs.sh	2021-09-26 08:09:02.000000000 -0400
++++ linux-5.10.69/usr/gen_initramfs.sh	2021-09-28 14:06:02.210200548 -0400
+@@ -163,7 +163,22 @@
+ 
+ input_file() {
+ 	source="$1"
+-	if [ -f "$1" ]; then
++	if [ -x "$1" ]; then
++		# If an executable is specified, assume it outputs
++		# gen_init_cpio format
++		header "$1"
++		print_mtime "$1" >> $cpio_list
++		"$1"             >> $cpio_list
++		if [ -n "$dep_list" ]; then
++		        echo ".config \\"  >> $dep_list
++		        echo "$1 \\"  >> $dep_list
++			"$1" | while read type dir file perm ; do
++				if [ "$type" = "file" ]; then
++					echo "$file \\" >> $dep_list
++				fi
++			done
++		fi
++	elif [ -f "$1" ]; then
+ 		# If a regular file is specified, assume it is in
+ 		# gen_init_cpio format
+ 		header "$1"
