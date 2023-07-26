@@ -46,11 +46,36 @@ my $PATH = File::ShareDir::dist_dir( 'Linux-InitFS' );
 	my $vers = `make -s kernelversion`;
 	chomp $vers;
 
-	my @vers = split /[\.\-\_]/, $vers;
+	my ( $major, $minor ) = split /[\.\-\_]/, $vers;
 
 	warn "Patching Linux kernel version $vers sources.\n";
 
-	$PATH .= '/patches/' . $vers[0] . '.' . $vers[1];
+	my $patch_path = $PATH . '/patches';
+
+	opendir my $dh, $patch_path
+		or die "opendir($patch_path): $!\n";
+
+	my %dirent = ();
+	while ( my $dirent = readdir( $dh ) ) {
+		next if $dirent =~ /^\./;
+		my ( $maj, $min ) = split /\./, $dirent;
+		$dirent{$maj}->{$min} = 1;
+	}
+
+	closedir $dh;
+
+	my $patch_major = $major;
+	my $patch_minor = $minor;
+
+	while ( not exists $dirent{$patch_major} ) {
+		die "no patch available" if $patch_major == 0;
+		$patch_major--;
+	}
+
+	my @avail = sort { $a <=> $b } keys %{$dirent{$patch_major}};
+	$patch_minor = pop @avail;
+
+	$PATH = $patch_path . '/' . $patch_major . '.' . $patch_minor;
 
 }
 
