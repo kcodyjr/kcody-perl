@@ -7,8 +7,8 @@ WriteMakefile(
     AUTHOR			=> 'Kevin Cody-Little <kcodyjr@gmail.com>',
     LICENSE			=> 'perl',
 
-    VERSION_FROM		=> 'IPC/Shm.pm', # finds $VERSION
-    ABSTRACT_FROM		=> 'IPC/Shm.pm',
+    VERSION_FROM		=> 'lib/IPC/Shm.pm', # finds $VERSION
+    ABSTRACT_FROM		=> 'lib/IPC/Shm.pm',
     PERL_MALLOC_OK		=> 1,
 
     PREREQ_PM			=> {
