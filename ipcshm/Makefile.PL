@@ -11,6 +11,8 @@ WriteMakefile(
     ABSTRACT_FROM		=> 'IPC/Shm.pm',
     PERL_MALLOC_OK		=> 1,
 
+    PMLIBDIRS			=> [ 'IPC' ],
+
     PREREQ_PM			=> {
     	Carp			=> 0,
 	Storable		=> 0,
