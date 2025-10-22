@@ -4,6 +4,24 @@ use strict;
 
 
 ###############################################################################
+# init: find where the terminfo files are
+
+my $TERMINFO;
+
+if ( -e '/etc/terminfo' ) {
+	$TERMINFO = '/etc/terminfo/';
+}
+
+elsif ( -e '/usr/share/terminfo' ) {
+	$TERMINFO = '/usr/share/terminfo/';
+}
+
+else {
+	die "terminfo database not found, aborting\n";
+}
+
+
+###############################################################################
 # base constructor
 
 sub entry {
@@ -163,7 +181,7 @@ sub new_term_type {
 
 	my ( $char ) = ( $type =~ /^(\w)/ );
 
-	my $file = '/etc/terminfo/' . $char . '/' . $type;
+	my $file = $TERMINFO . $char . '/' . $type;
 
 	return $class->new_host_file( $ctx, $file );
 }

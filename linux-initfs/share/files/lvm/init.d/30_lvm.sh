@@ -6,10 +6,12 @@ vgcfgbackup vgchange vgconvert vgdisplay vgextend vgmknodes vgremove
 vgs vgsplit vgcfgrestore vgck vgcreate vgexport vgimport vgmerge
 vgreduce vgrename vgscan'
 
+LVM=$(which lvm)
+
 for lvmalias in $LVMALIAS
 do
-	ln -s lvm /sbin/$lvmalias
+	ln -s $LVM /sbin/$lvmalias
 done
 
-unset lvmalias LVMALIAS
+unset lvmalias LVMALIAS LVM
 
