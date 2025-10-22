@@ -2,6 +2,9 @@ package Linux::InitFS::Entry;
 use warnings;
 use strict;
 
+use Cwd qw( abs_path );
+use File::Basename qw( dirname );
+
 
 ###############################################################################
 # init: find where the terminfo files are
@@ -95,6 +98,12 @@ sub new_file {
 
 		my $link = readlink $from
 			or return;
+
+		if ( $link =~ /^\./ ) {
+			my $base = dirname( $path );
+			my $full = $base . '/' . $link;
+			$link = abs_path( $full );
+		}
 
 		$class->new_slink( $ctx, $path, $link );
 
