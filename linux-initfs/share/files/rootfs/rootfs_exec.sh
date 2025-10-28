@@ -23,7 +23,7 @@ then
 	echo BUG: insufficient parameters in rootfs_exec
 
 else
-	exec chroot "$FINDFS_MNT" "$ROOTFS_BIN"
-	echo SEVERE: returned from "exec chroot '$FINDFS_MNT' '$ROOTFS_BIN'" >&2
+	exec switch_root -c /dev/console "$FINDFS_MNT" "$ROOTFS_BIN"
+	echo SEVERE: returned from "exec switch_root '$FINDFS_MNT' '$ROOTFS_BIN'" >&2
 fi
 
